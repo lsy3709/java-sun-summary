@@ -18078,8 +18078,235 @@ SamePhone [number=011, price=1000]
 
 522 24/43
 
+Collection<E>의 sort()는 List<E>의 요소들을 정렬시킬 수 있지만, 
+Set<E>는 아니다. 앞서 배웠던 HashSet<E>은 순서가 없기 때문에 
+기본적으로 정렬이 불가능하다. 대신 NavigableSet<E> 을 구현한 
+TreeSet은 정렬 기능을 가지고 있다. 
+
+(1)이진 트리 구조 
+TreeSet<E>은 Tree는 자료가 저장되는 모양에서 유래된다. 
+이진트리(binary tree)라고 불리는 이 구조는 루트 노드라고 불리는 
+최상위 노드와 그자식들이 1~2개의 노드를 가지는 구조로 형성된다. 
+하위 노드들을 필요에 따라 계속해서 자식 노드를 추가할수 있고 
+자신은 부모 노드가 된다. 
+루트 노드 -> 부모노드 ->자식노드 
+
+이진 트리 구조가 데이터를 저장하는 방법에 대해 알아보자.
+이진 트리는 값이 들어오면 부모 노드의 값보다 작은 값은 
+왼쪽 노드에 할당하고 큰 값은 오른쪽 노드에 할당한다. 
+만약 두 값이 같다면 추가되지 않는다. 
+
+문자의 경우 크고 작음의 기준으로 유니코드 값을 이용한다. 
+예를 들어 "w", "o", "r", "l", "d"라는 다섯 개의 
+문자열이 이진 트리에 저장되는 순서는 다음과 같다. 
+
+(1) "o"
+w -> (w>o?) : o는 w 왼쪽 아래 "o"
+(2) "r"
+-> (w>r?) : r는 w 왼쪽아래 ,
+다시, (r > o?) : r는 o 오른쪽아래 
+(3) "l"
+-> (w>l?) : l는 w 왼쪽아래 ,
+다시, (l > o?) : l는 o 왼쪽아래 
+(4) "d"
+-> (w>d?) : d는 w 왼쪽아래 ,
+다시, (d > o?) : d는 o 왼쪽아래 
+다시, (d > l?) : d는 l 왼쪽아래 
+
+이진 트리의 자료 정리 방법 
+
+이렇게 자료를 정리했을 때 장점은 자료가 정리될때마다 자동으로 
+정렬이 된다는 것이다. 
+위 구조에서 왼쪽에서 오른쪽으로 읽어보면 
+d->l->o->r->w 가 된다. 즉 오름차순 정렬이 되고 
+반대 방향은 내림차순 정렬이다. 또한, "o"이상의 것은 
+"o"의 부모이거나 오른쪽에 있는 요소 즉 "r"과 "w"가 된다. 
+
+(2)TreeSet<E>
+
+TreeSet<E>은 이진 트리 구조를 기반으로 한 Set<E> 계열의 
+컬렉션이다. 하지만, 관리해야 하는 객체가 정렬되어야 하기 
+때문에 저장되는 객체들은 Comparable<E>을 구현하고 있거나 
+Comparator<E>를 생성자로 전달해서 사용자 정의 정렬 방식을 
+이용할 수 있다. 
+
+ex)
+public TreeSet() { // Comparable 구현체 관리용
+this(new TreeMap<E, Object>());
+}
+// 사용자 정의 정렬 방식 활용 
+public TreeSet(Comparator< ? super E> comparator) {
+this(new TreeMap<>(comparator));
+}
+
+객체를 저장할 때도 내부적으로 Comparable 형태로 형변환해 
+사용하므로 Comparable 구현체가 아닌 자료가 저장될 경우 
+런타임에 ClassCastException이 발생한다. 다음과 같이 
+단순한 Object 객체를 저장하면 Object에는 Comparable이 
+구현되어 있지 않으므로 오류가 발생한다. 
+
+ex)
+Set<Object> set1 = new TreeSet<>();
+set1.add(new Object());
+// Exception in thread "main"
+java.lang.ClassCastException: java.lang.Object
+cannot be cast to java.lang.Comparable
+
+이런 경우 TreeSet<E>을 생성할 때 Comparator를 추가해야 
+동작한다. 
+
+ex)
+class ObjComparator implements Comparator<Object> {
+@Override
+public int compare(Object o1, Object o2) {
+return o1.toString().compareTo(o2.toString());
+}
+
+Set<Object> set1 = new TreeSet<> (new ObjComparator());
+set1.add(new Object());
+
+자료를 저장할 때도 주의할 사항이 있는데 비교되는 객체는 모두 같은 
+Comparable<E>나 Comparator<E>의 E와 같은 종류여야한다. 
+생각해보면 객체 간의 순서를 지정해서 저장 해야 하는데 
+객체의 종류가 다르면 비교한 근거가 없기 때문에 문제가 발생하는 것이다. 
+예를들어 숫자를 저장하다가 갑자기 Phone 객체가 들어온다면 둘을 
+비교할 방법이 없을 것이다. 
+이런 경우도 역시 ClassCastException 이 발생한다. 
+
+ex)
+Set<Object> set1 = new TreeSet<>();
+set1.add("Hello");
+set1.add(1);
+// Exception in thread "main"
+// java.lang.ClassCastException: java.lang.Object
+// cannot be cast to java.lang.Integer
+
+TreeSet<E>에는 정렬된 트리를 이용해서 요소를 조회하는 메서드들이 
+제공된다. 
+
+TreeSet의 메서드 
+
+메서드 명 : 선언부와 설명 
+
+first() : public E first()
+정렬 결과 처음 요소를 리턴한다. 
+
+last() : public E last()
+정렬 결과 마지막 요소를 리턴한다. 
+
+lower() : public E lower(E e)
+e 바로 이전의 객체를 리턴한다. 
+
+higher() : public E higher(E e)
+e 바로 다음의 객체를 리턴한다. 
+
+floor() : public E floor(E e)
+e 또는 만약 e가 없다면 e 바로아래(이전) 객체를 리턴한다. 
+
+ceiling() : public E ceiling(E e)
+e 또는 만약 e가 없다면 e 바로위(다음) 객체를 리턴한다. 
+
+pollFirst() : public E pollFirst()
+first() 객체를 리턴하고 TreeSet<E>에서 제거한다. 
+
+pollLast() : public E pollLast()
+last() 객체를 리턴하고 TreeSet<E>에서 제거한다. 
+
+decendingSet() : public NavigableSet<E> decendingSet()
+내림차순으로 정렬하는 NavigableSet<E>를 리턴한다. 
+
+headSet() : public NavigableSet<E> headSet( E toElement, boolean inclusive)
+toElement 아래(이전) 객체들을 NavigableSet<E>으로 리턴한다. 
+inclusive가 true이면 toElement를 포함하고 false이면 포함하지 않는다. 
+
+tailSet() : public NavigableSet<E> tailSet(E fromElement, boolean inclusive)
+fromElement 이후(다음) 객체들을 NavigableSet<E>으로 리턴한다. 
+Inclusive 가 true 이면 fromElement를 포함하고 false이면 
+포함하지 않는다. 
+
+subSet() : public NavigableSet<E> subSet(E fromElement, boolean frominclusive, 
+E toElement, boolean toInclusive)
+fromElement 에서 toElement 사이의 요소로 구성된 NavigableSet<E> 을 
+반환한다. 각 경계 요소의 포함 여부는 frominclusive와 toInclusive로 결정한다. 
+
+이 기능들은 Set에 선언되지 않고 TreeSet<T>의 또 다른 상위 
+인터페이스인 NavigableSet<E>에 선언되어 있고, TreeSet<E>이 
+구현했다. 따라서 이 기능들을 사용하기 위해서는 객체 생성시 
+Set<E> 이 아닌 NavigableSet<E> 타입으로 사용해야 한다. 
+다음 예제를 통해 "w", "o", "r", "l", "d"를 TreeSet<E>에서 
+관리해보자. 
+
+ex)
+package ch13.set;
+
+import java.util.Arrays;
+import java.util.NavigableSet;
+import java.util.TreeSet;
+
+public class SimpleTreeSetTest {
+	public static void main(String[] args) {
+		TreeSet<Object> set = new TreeSet<>();
+		set.addAll(Arrays.asList("w","o","r","l","d"));
+		System.out.println("오름차순 TreeSet: "+set);
+		System.out.println("처음 요소: "+set.first());
+		System.out.println("마지막 요소: "+set.last());
+		System.out.println("o 아래 요소: "+set.lower("o"));
+		System.out.println("l 다음 요소: "+set.higher("l"));
+		System.out.println("m 이전 요소: "+set.floor("m"));
+		System.out.println("m 다음 요소: "+set.ceiling("m"));
+		System.out.println("헤드 셋: "+set.headSet("m"));
+		
+		NavigableSet<Object> naviSet = set.descendingSet();
+		System.out.println("내림차순 TreeSet: "+naviSet);
+	}
+}
+//
+오름차순 TreeSet: [d, l, o, r, w]
+처음 요소: d
+마지막 요소: w
+o 아래 요소: l
+l 다음 요소: o
+m 이전 요소: l
+m 다음 요소: o
+헤드 셋: [d, l]
+내림차순 TreeSet: [w, r, o, l, d]
+
+이번에는 앞서 테스트 했던 StringLengthComparator를 이용해서 
+TreeSet<E>에 담긴 문자열들을 정렬시켜보자. 
+
+ex2)
+package ch13.set;
+
+import java.util.Arrays;
+import java.util.NavigableSet;
+import java.util.TreeSet;
+
+import ch13.list.StringLengthComparator;
+
+public class CustomTreeSetTest {
+	public static void main(String[] args) {
+		TreeSet<String> set = new TreeSet<>(new StringLengthComparator());
+		set.addAll(Arrays.asList("타노스", "아이언맨","헐크","토르","데드폴","비전"));
+		System.out.println("오름차순 TreeSet: "+set);
+		
+		NavigableSet<String> naviSet = set.descendingSet();
+		System.out.println("내림차순 TreeSet: "+naviSet);
+	}
+}
+//
+오름차순 TreeSet: [헐크, 타노스, 아이언맨]
+내림차순 TreeSet: [아이언맨, 타노스, 헐크]
+
+위 예제의 결과는 흥미로운 점이 있다. 
+TreeSet<E>에는 서로 다른 6개의 객체를 넣었지만, 출력 결과는 
+3개 밖에 남지 않았다. 제거된 객체들은 길이가 같은 문자열들이다. 
+즉 Comparator의 compare()에서 0이 리턴되는 경우는 추가되지 않음을 
+알수 있다. 
+
 ----------------------------------------------------
 3.4 TreeSet<E> 을 이용한 로또 게임 
+
+526 28/43
 
 ----------------------------------------------------
 4. Map 계열의 컬렉션

@@ -18308,10 +18308,107 @@ TreeSet<E>에는 서로 다른 6개의 객체를 넣었지만, 출력 결과는
 
 526 28/43
 
+이번에는 TreeSet<E>을 이용해 로또를 만들어보자. List<E>와 달라질 점은 
+크게 두가지다. 먼저 Set<E> 계열에서는 데이터가 있는지 contains()로 
+확인해볼 필요가 없다. 중복되는 데이터는 자동으로 제거되기 때문이다. 
+또한, TreeSet<E>은 자체 정렬하므로 별도로 자료를 정렬시킬 필요도 없어진다. 
+앞서 학습한 ListLottoTest와 다른 점 위주로 살펴보자. 
+
+ex)
+package ch13.set;
+
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+
+class TreeSetLotto {
+	Integer bonus;
+	Set<Integer> lotto = new TreeSet<>();
+
+	public void setup() {
+		Random random = new Random();
+		while (bonus == null) {
+			int num = random.nextInt(45) + 1;
+			if (lotto.size() < 6) {
+				lotto.add(num);
+			} else {
+				bonus = num;
+			}
+		}
+	}
+
+	@Override
+	public String toString() {
+		return "당첨번호: " + lotto + ", 보너스: " + bonus;
+	}
+}
+
+public class TreeSetLottoTest {
+
+	public static void main(String[] args) {
+		TreeSetLotto lotto = new TreeSetLotto();
+		lotto.setup();
+		System.out.println(lotto);
+	}
+}
+// 매번 다름 랜덤 객체 이용해서. 
+당첨번호: [15, 16, 27, 32, 41, 44], 보너스: 27
+
 ----------------------------------------------------
 4. Map 계열의 컬렉션
 
 4.1 Map 인터페이스
+
+Map<K,V> 계열은 생활 속에서 자료를 정리할 때 많이 사용되는 형식이다. 
+예를 들어 우편번호를 키로 주소가 등록되어 있고 수첩 속에는 친구이름으로 
+친구의 전화번호가 등록된다. 주민등록번호를 통해서 사람에  대한 정보를 
+찾을 수 있다. Map<K,V>의 K와 V는 각각 키(Key), 값(Value)을 
+의미하며 내부적으로 Map.Entry라는 Map 내부의 내부클래스 형태로 저장된다. 
+즉 Map은 키와 값으로 구성된 Entry 객체의 모임이다. 
+이때 키는 중복될 수 없고 값은 종복이 가능하다. 
+Set<E>에서와 마찬가지로 중복이란 equals()의 결과 true이고 hashCode()가 
+같은 경우이다. 다음 그림은 Map<K,V>을 통해 전화번호를 관리하는 예이다. 
+
+ex)
+0x100 -> 휴대폰 
+0x200 -> 010-xx 
+
+0x300 -> 사무실 
+0x400 -> 02-12x
+
+0x500 -> 집전화
+0x400 -> 02-12x 
+
+키 -> 중복불가 
+값 -> 중복가능 
+
+Map.Entry 
+
+Map 계열의 데이터 저장
+
+Map<K,V> 는 컬렉션 프레임워크에 포함되어 있지만, 
+Collection<E> 을 상속받지는 않는다. 
+
+과거버전 
+
+ex)
+Properties -> Hashtable -> Map 
+HashMap -> Map 
+TreeMap -> NavigableMap -> SortedMap -> Map
+
+Map<K,V> 계열의 클래스 관계도 
+
+Map<K,V>의 구현체 중 가장 많이 사용되는 것은 HashMap<K,V>이다. 
+HashMap<K,V>의 Map.Entry 들은 순서가 없는데 여기에 정렬 기준을 
+더한 것이 NavigableMap<K,V> 을 구현한 TreeMap<K,V>이다. 
+Hashtable<K,V>는 List<E> 계열의 Vector<E> 처럼 멀티스레드에 
+안전하지만 성능은 좋지 않은 과거 버전이다. 
+Hashtable<K,V> 보다는 HashMap<K,V>를 사용하자. 
+
+Hashtable<K,V> 의 하위클래스인 Properties는 속성 파일의 손쉬운 
+관리라는 측면에서 자주 사용되는 클래스이다. 
+
+529 31/43
 
 ----------------------------------------------------
 4.2 HashMap<K, V>

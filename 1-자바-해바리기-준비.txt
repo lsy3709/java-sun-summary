@@ -18410,11 +18410,165 @@ Hashtable<K,V> 의 하위클래스인 Properties는 속성 파일의 손쉬운
 
 529 31/43
 
+Map<K,V>에 선언된 API들을 알아보자. List<E> 계열에서 인덱스를 이용해서 
+요소인 E에 접근했듯이 Map<K,V>에서는 키인 K를 이용해서 값인 V에 
+접근한다. 
+
+Map<K,V>의 주요 메서드 
+
+메서드 명 : 선언부와설명
+
+clear() : void clear()
+Map 의 모든 Entry를 지워서 초기화한다. 
+
+containsKey() : boolean containsKey(Object key)
+Map에 key로 등록된 Entry 가 있는지 여부 반환한다.
+
+entrySet() : Set<Map, Entry<K,V>> entrySet()
+Map의 Entry들을 Set에 담아서 리턴한다. 
+
+get() : V get(Object key)
+key로 등록된 값 객체를 리턴한다. 
+
+keySet() : Set<K> keySet()
+Map의 키 목록을  Set 형태로 리턴한다. 
+
+put() : V put(K key, V value)
+key를 키로 value를 값으로 하는 Entry를 Map에 추가한다. 
+리턴값은 기존에 key로 등록된 값이 있다면 그 값, 
+없다면 null 이다. 
+
+putAll() : voit putAll(Map< ? extends K, ? extends V> m)
+m에 포함된 모든 Entry들을 Map에 추가한다. 
+
+remove() : V remove(Object key)
+key에 해당하는 Entry를 Map에서 제거하고 리턴한다. 
+Key에 해당하는 Entry가 없을 경우 null이 리턴된다. 
+
+values() : Collection<V> values()
+Map의 값 객체들을 Collection에 담아서 리턴한다. 
+
+size() : int size();
+Map에 포함된 Entry의 개수를 리턴한다 .
+
+isEmpty() : boolean isEmpty();
+Map에 데이터가 없는지 리턴한다. 
+
+Map의 모든 Entry들을 하나씩 처리하기 위해서는 keySet()을 이용해 
+키가 담긴 Set을 넘겨받아서 처리하거나 entrySet()을 이용해 
+Entry가 담긴 Set을 넘겨받는다. 일반적으로 keySet()은 키를 
+이용해서 작업을 처리할 때, entrySet()은 값을 이용해서 작업을 
+처리할 때 좀더 유리하다. 
+
+Map<K,V>의 메서드를 기능별로 분류해보면 다음과 같다. 
+
+Map<K,V>의 메서드 분류 
+
+분류 : Map<K, V>
+
+추가 : put(K key, V value) ,  putAll(Map <? extends K, ? extends V> m)
+
+조회 : containsKey(Object key), containsValue(Object value)
+entrySet(), get(Object key), keySet(), values(), size()
+isEmpty()
+
+삭제 : clear(), remove(Object key)
+
+수정 : put(K key, V value)
+putAll(Map<? extends K, ? extends V> m)
+
+Map<K, V>에 Entry를 추가할 때는 key가 중복되면 기존의 값을 
+덮어 써버린다. 따라서 추가와 수정세 사용되는 메서드가 
+동일하다. 
+
+주의,
+참고로 HashSet<E> 계열은 내부적으로 HashMap<K, V>에 값을 저장한다. 
+이때 키에 해당하는 것이 실제 저장되는 객체이고 값 부분에는 
+더미 객체(new Object())를 사용한다. 다음은 HashSet<E>의 
+코드 일부분이다. 
+
+ex)
+private static final Object PRESENT = new Object();
+public HashSet() {
+map = new HashMap<>();
+}
+public boolean add(E e) {
+return map.put(e, PRESENT) == null;
+}
+
+
 ----------------------------------------------------
 4.2 HashMap<K, V>
 
+Map<K, V> 계열의 가장 대표적 구현체인 HashMap<K, V>를 이용해서 
+전화번호를 관리하는 애플리케이션을 작성하면서 위에서 설명한 
+메서드들의 사용법을 알아보자. 
+
+ex)
+package ch13.map;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+public class HashMapTest {
+	Map<String, String> hMap = new HashMap<>();
+
+	private void addMethod() {
+		System.out.println("추가 결과: " + hMap.put("andy", "1234"));
+		System.out.println("추가 결과: " + hMap.put("andy", "4567"));
+		hMap.put("henry", "4567");
+		hMap.put("kate", "9999");
+		System.out.println(hMap);
+	}
+
+	private void retrieveMethod() {
+		System.out.println("총 Entity 개수: " + hMap.size());
+		Set<String> keys = hMap.keySet();
+		for (String key : keys) {
+			System.out.println("키: " + key + " , 값: " + hMap.get(key));
+		}
+		String targetNumber = "4567";
+		Set<Map.Entry<String, String>> entrySet = hMap.entrySet();
+		for (Map.Entry<String, String> entry : entrySet) {
+			if (entry.getValue().equals(targetNumber)) {
+				System.out.println("번호가 " + targetNumber + "인 사람: " + entry.getKey());
+			}
+		}
+		System.out.println("kate의 전화번호가 있는가? " + hMap.containsKey("kate"));
+	}
+
+	private void removeMethod() {
+		hMap.remove("andy");
+		System.out.println(hMap);
+	}
+
+	public static void main(String[] args) {
+		HashMapTest hmt = new HashMapTest();
+		hmt.addMethod();
+		hmt.retrieveMethod();
+		hmt.removeMethod();
+	}
+}
+//
+추가 결과: null
+추가 결과: 1234
+{henry=4567, kate=9999, andy=4567}
+총 Entity 개수: 3
+키: henry , 값: 4567
+키: kate , 값: 9999
+키: andy , 값: 4567
+번호가 4567인 사람: henry
+번호가 4567인 사람: andy
+kate의 전화번호가 있는가? true
+{henry=4567, kate=9999}
+
+
+
 ----------------------------------------------------
 4.3 TreeMap<K, V>를 이용한 정렬 
+
+532 34/43
 
 ----------------------------------------------------
 4.4 HashMap<K, V>을 이용한 로또 게임

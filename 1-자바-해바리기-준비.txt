@@ -18570,6 +18570,131 @@ kate의 전화번호가 있는가? true
 
 532 34/43
 
+앞선 예제에서 살펴봤듯이 HashMap<K,V>는 순서가 없다. 
+Map<K,V> 계열에도 Set<E>의 TreeSet<E>처럼 정렬이 지원되는 
+TreeMap<K,V>가 존재한다. TreeMap<K,V>은 키값을 이용해 내부에 
+저장된 Entry들을 정렬시킨다. 기본적인 정렬 방식은 TreeSet<E>
+과 동일하다. 즉 별도의 Comparator<E>를 사용하지 않았으면 
+저장되는 키가 Comparable<E> 을 구현하고 있어야 한다. 
+
+다음 TreeMap<K,V>의 주요 생성자들이다. 
+
+ex)
+// 저장되는 Entry의 키는 Comparable 타입일 것. 기본 키를 이용해 
+정렬 
+public TreeMap() {..}
+
+//키의 상위 객체를 요소로 갖는 Comparator를 이용해 정렬 
+public TreeMap(Comparator< ? super K> comparato){..}
+
+// K가 Comparable 타입이 아닐 경우 ClassCastException 발생 
+public TreeMap(Map<? extends K, ? extends V> m) {..}
+
+주요 메서드들 역시 TreeSet<E>의 것과 유사하다. 
+대부분 뒤에 Entry가 접미사로 추가된다. 
+
+TreeMap의 주요 메서드 
+
+메서드 명 : 선언부와설명
+
+firstEntry() : public Map.Entry<K,V> firstEntry()
+정렬 결과 처음 Entry<K,V>를 리턴한다. 
+
+lastEntry() : public Map.Entry<K,V> lastEntry()
+정렬 결과 맨 마지막 Entry<K,V>를 리턴한다. 
+
+lowerEntry() : public Map.Entry<K,V> lowerEntry(K key)
+key 바로 이전의 Entry<K,V>를 리턴한다. 
+
+higherEntry() : public Map.Entry<K,V> higherEntry(K key)
+key 바로 다음의 Entry<K,V>를 리턴한다. 
+
+floorEntry() : public Map.Entry<K,V> floorEntry(K key)
+key 또는 만약 key 가 없다면 key 바로 아래 Entry<K,V>를 리턴한다. 
+
+ceilingEntry() : public Map.Entry<K,V> ceilingEntry(K key)
+key 또는 만약 key 가 없다면 key 바로 위의 Entry<K,V>를 리턴한다. 
+
+pollFirstEntry() : public Map.Entry<K,V> pollFirstEntry()
+firstEntry() 객체를 리턴하고 TreeMap<K,V> 에서 제거한다. 
+
+pollLastEntry() : public Map.Entry<K,V> pollLastEntry()
+lastEntry() 객체를 리턴하고 TreeMap<K,V> 에서 제거한다. 
+
+decendingKeySet() : public NavigableSet<K> descendingKeySet()
+내림 차순으로 정렬하는 NavigableSet<K>를 리턴한다. 
+
+decendingKeyMap() : public NavigableMap<K> descendingMap()
+내림 차순으로 정렬하는 NavigableMap<K,V>를 리턴한다. 
+
+headMap() : public NavigableMap<K, V> headMap( k toKey, boolean inclusive)
+toKey 아래(이전) Entry<K, V>들을 NavigableMap<K, V>으로 리턴한다. 
+Inclusive가 true 이면 toKey를 포함하고 false이면 포함하지 않는다. 
+
+tailMap() : public NavigableMap<K, V> tailMap( k fromKey, boolean inclusive)
+fromKey 이후(다음) Entry<K, V>들을 NavigableMap<K, V>으로 리턴한다. 
+Inclusive가 true 이면 fromKey를 포함하고 false이면 포함하지 않는다. 
+
+subMap() : public NavigableMap<K, V> subMap<K fromKey, 
+boolean fromInclusive, K toKey, boolean toInclusive)
+fromKey에서 toKey 사이의 Entry<K, V>로 구성된 
+NavigableMap<K, V>을 반환한다. 각 경계 요소의 포함 여부는 
+fromKey와 toKey로 결정한다. 
+
+다음은 TreeMap<K, E>을 이용해서 Entry<K, V>를 관리하는 예이다. 
+
+ex)
+package ch13.map;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
+import ch13.list.StringLengthComparator;
+
+public class TreeMapTest {
+	private static Map<String, String> initMap(Map<String, String> map) {
+		map.put("토르", "마블");
+		map.put("베트맨", "DC");
+		map.put("아이언맨", "마블");
+		map.put("원더우먼", "DC");
+		return map;
+	}
+
+	public static void main(String[] args) {
+		Map<String, String> map = initMap(new HashMap<>());
+		System.out.println("맵의 정렬 상태 1: " + map);
+		Map<String, String> tmap = initMap(new TreeMap<>());
+		System.out.println("맵의 정렬 상태 2: " + tmap);
+		if(tmap instanceof NavigableMap<?, ?>) {
+			NavigableMap<String, String> navMap = (NavigableMap<String, String>)tmap;
+			System.out.println("맵의 맨 처음 요소: "+navMap.firstEntry());
+			System.out.println("맵의 내림차수 정렬: "+navMap.descendingMap());
+		}
+		
+		Map<String, String> tmap2 = initMap(new TreeMap<>(new StringLengthComparator()));
+		System.out.println("맵의 정렬 상태 3: " + tmap2);
+	}
+}
+//
+맵의 정렬 상태 1: {아이언맨=마블, 원더우먼=DC, 토르=마블, 베트맨=DC}
+맵의 정렬 상태 2: {베트맨=DC, 아이언맨=마블, 원더우먼=DC, 토르=마블}
+맵의 맨 처음 요소: 베트맨=DC
+맵의 내림차수 정렬: {토르=마블, 원더우먼=DC, 아이언맨=마블, 베트맨=DC}
+맵의 정렬 상태 3: {토르=마블, 베트맨=DC, 아이언맨=DC}
+
+//일반 HashMap<> 타입의 객체를 만들고 출력한다. 자료 저장순서는 
+보장되지 않는다. 
+// 저장 키인 String의 Comparator를 이용한 TreeMap<> 타입의 객체를 
+만들고 출력한다. 출력 결과는 키의 알파벳 오름차순으로 정렬된다. 
+// NavigableMap으로 형변환 후 firstEntry(), decendingMap()등 
+메서드의 리턴값을 출력한다. 각각 정렬된 첫번째 Entry또는 
+내림차순 정렬 결과를 얻을 수 있다. 
+
+535 37/43
+
+
 ----------------------------------------------------
 4.4 HashMap<K, V>을 이용한 로또 게임
 

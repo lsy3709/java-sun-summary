@@ -18693,18 +18693,217 @@ public class TreeMapTest {
 내림차순 정렬 결과를 얻을 수 있다. 
 
 535 37/43
-
-
 ----------------------------------------------------
 4.4 HashMap<K, V>을 이용한 로또 게임
 
-----------------------------------------------------
+Map<K,V> 구조에서 로또 게임을 생각해보자. 100만 번 랜덤한 숫자를 
+발생시킨후 번호를 키로, 빈도수를 값으로 Map<K,V> 저장해 놓고 
+빈도수를 기준으로 상위 1~6번까지를 당첨번호, 7번째를 보너스 번호로 
+간주하도록 작성해보자. 
+
+ex)
+package ch13.map;
+
+import java.text.MessageFormat;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.TreeSet;
+
+class LottoEntryComparator implements Comparator<Entry<Integer, Integer>> {
+	@Override
+	public int compare(Entry<Integer, Integer> o1, Entry<Integer, Integer> o2) {
+		int result = o1.getValue().compareTo(o2.getValue()) * -1;
+		if (result == 0) {
+			result = o1.getKey().compareTo(o2.getValue()) * -1;
+		}
+		return result;
+	}
+}
+
+public class MapLottoTest {
+	public static void main(String[] args) {
+		Map<Integer, Integer> lottoMap = new HashMap<>();
+		Random random = new Random();
+		for (int i = 0; i < 100000; i++) {
+			int num = random.nextInt(45) + 1;
+			if (lottoMap.containsKey(num)) {
+				lottoMap.put(num, lottoMap.get(num) + 1);
+			} else {
+				lottoMap.put(num, 1);
+			}
+		}
+		sortLottoByValue(lottoMap);
+	}
+
+	public static void sortLottoByValue(Map<Integer, Integer> map) {
+		TreeSet<Map.Entry<Integer, Integer>> sortedEntries = new TreeSet<>(new LottoEntryComparator());
+		sortedEntries.addAll(map.entrySet());
+		String pattern = "{0} 번호: {1}\t(총 누적: {2})";
+		for (int i = 0; i < 7; i++) {
+			Entry<Integer, Integer> first = sortedEntries.pollFirst();
+			String msg = null;
+			if (i == 6) {
+				msg = MessageFormat.format(pattern, "보너스", first.getKey(), first.getValue());
+			} else {
+				msg = MessageFormat.format(pattern, "당첨", first.getKey(), first.getValue());
+			}
+			System.out.println(msg);
+		}
+	}
+}
+//
+당첨 번호: 32	(총 누적: 2,308)
+당첨 번호: 25	(총 누적: 2,306)
+당첨 번호: 15	(총 누적: 2,294)
+당첨 번호: 7	(총 누적: 2,289)
+당첨 번호: 20	(총 누적: 2,284)
+당첨 번호: 35	(총 누적: 2,280)
+보너스 번호: 44	(총 누적: 2,275)
+
+---------------------------------------------------
 4.5 Propertie<K, V>
+
+Properties<K, V>는 구 버전의 컬렉션인 Hashtable을 상속받은 클래스로 
+애플리케이션의 환경 설정 파일에 데이터를 읽고 쓰는 기능을 가지고 있다. 
+예를 들어 데이터베이스에 접속하기 위해서는 애플리케이션에서 서버의 
+주소, 사용자 계정(아이디/패스워드)등을 알고 있어야 한다. 
+하지만 이 값들은 주기적으로 또는 수시로 변경될 수 있어야 한다. 
+만약 이런 설정값들이 애플리케이션에 소스 코드 형태로 적혀 있다면 값을 
+변경할 때마다 다시 컴파일을 진행해야 할것이다. 따라서 설정값들은 
+일반적인 소스와 분리된 별도의 텍스트 파일에 보관하게 되는데 이 파일은 
+컴파일 대상이 아니다. 
+
+ex)
+애플리케이션1 ---->  DB
+String id ="andy"
+String pass ="1234"
+String addr = "192.168.0.2"
+소스파일 : 변경시 컴파일 필요 
+
+애플리케이션2 ---->  DB
+Properties p 
+id = andy
+pass =1234 
+addr =192.168.0.2 
+일반 텍스트 파일 : 변경시 컴파일 불필요 
+
+환경 설정의 저장 방식 차이 
+
+이 설정 파일은 일반적으로 확장자를 '.properties'로 만든다.
+(물론 꼭 정해져 있는 것은 아니다. ) 설정 파일은 
+'키=값'과 같은 Entry 형태로 값을 여러개 저장할 수 있어서 
+마치 파일에 작성해 놓은 Map과 유사하다. 
+
+파일에 데이터를 쓰고 읽는 과정은 스트림을 이용하는 복잡한 과정이지만 
+Properties는 간단한 메서드를 통해 손쉽게 처리할 수 있다. 
+
+Properties 의 주요 메서드 
+
+메서드 명 : 선언부와설명
+
+getProperty() : public String getProperty(String key)
+key에 해당하는 속성 값을 리턴한다. 
+
+public String getProperty(String key, String defaultValue)
+key에 해당하는 속성값을 리턴한다. 값이 없을 경우 
+defaultValue를 리턴한다. 
+
+stringPropertyNames() : Set<String> stringPropertyNames()
+Properties가 가진 키의 목록을 Set<String>으로 리턴한다. 
+
+setProperty() : public synchronized Object setProperty(String key, String value)
+key로 value을 등록하고 기존에 key로 등록되었던 값을 리턴한다. 
+
+load() : public synchronized void load(Reader reader)
+throws IOException
+reader를 이용해 속성을 읽어온다. 
+
+loadFromXML() : public synchronized void loadFromXML(InpuStream in)
+throws IOException, InvalidPropertiesFormatException 
+in 을 이용해서 XML 형태로 저장된 속성을 읽어온다. 
+
+store() : public void store(Writer writer, String comments)
+throws IOException
+writer를 이용해서 속성을 파일에 저장한다. 이때 comment를 추가할수 있다.
+
+storeToXML() : public void storeToXML(OutputStream os, String comment)
+throws IOException
+os를 통해 속성 파일을 XML 형태로 추가한다. 
+이때 comment 를 추가할수 있다. 
+
+Properties<K,V> 도 Map<K, V>를 구현하고 있기 때문에 put(), get()
+과 같은 메서드를 사용할 수 있다. 하지만 일반적으로 속성들은 모두 문자열로 
+간주하기 때문에 문자열을 기본으로 사용하는 getPropertiy(), setProperty()
+메서드를 더 많이 사용하는 편이다. 
+
+load 계열과 store 계열의 메서드들이 눈에 띄는데 각각 파일에서 속성을 
+읽어오거나 쓰는 역할을 담당한다. 이 메서드들은 파라미터로 입/출력을 
+위한 스트림들을 파라미터로 받는데 이에 대한 자세한 설명은 
+15장에서 다룬다. 
+
+다음은 Properties 를 이용해 속성을 저장하고 읽는 방법에 대한 예제이다. 
+
+ex)
+package ch13.map;
+
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.Properties;
+import java.util.Set;
+
+public class PropertiesTestWithFile {
+	private final static String PROP_FILE_PATH = "./config.properties";
+
+	public static void main(String[] args) {
+		saveToFile();
+		loadFromFile();
+	}
+
+	private static void saveToFile() {
+		Properties props = new Properties();
+		props.setProperty("id", "andy");
+		props.setProperty("pass", "1234");
+		props.setProperty("addr", "192.168.0.2");
+		props.setProperty("이름", "홍길동");
+		System.out.println("속성 확인: " + props);
+		try (FileWriter output = new FileWriter(PROP_FILE_PATH)) {
+			props.store(output, "System Config");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void loadFromFile() {
+		Properties props = new Properties();
+
+		try (FileReader input = new FileReader(PROP_FILE_PATH)) {
+			props.load(input);
+			Set<String> keys = props.stringPropertyNames();
+			for(String key: keys) {
+				System.out.println(key+" : "+props.getProperty(key));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}
+//
+속성 확인: {pass=1234, 이름=홍길동, id=andy, addr=192.168.0.2}
+pass : 1234
+이름 : 홍길동
+id : andy
+addr : 192.168.0.2
+//해당 워크스페이스에서 파일 만들기.
 
 ===================================
 [자바 해바라기 정리] 14 멀티스레드 프로그래밍
 
 1. 멀티스레드 프로그래밍
+
+
 
 1.1 스레드 와 프로세스 
 

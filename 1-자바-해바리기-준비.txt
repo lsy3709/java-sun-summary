@@ -19244,20 +19244,288 @@ main is over
 
 549 8/45
 
+스레드 실행과 관련된 두가지 중요한 메서드는 run()과
+start() 메서드 이다. run() 메서드는 스레드에서 수행할 작업을 
+정의하는 메서드이고 start() 메서드 호출은 스레드의 run()
+메서드가 호출될수 있도록 준비하는 과정이다.
+실제 run() 메서드를 호출 하는 것은 JVM 이다.
+start() 가 호출되면 JVM 이 운영체제의 스레드 스케줄러에 의해 
+가능할 때 스레드의 run() 메서드를 호출한다. 
+따라서 우리 코드상에는 run() 메서드를 호출하지 않는 것이다. 
+마치 우리가 직접 main() 메서드를 호출하지 않은 것과 같다. 
+
+ex) 
+JVM -->실행 -> 메인 스레드 ->main()-> t1.start() 
+(가능할때 t1을 실행해주세요.) ->JVM 
+
+JVM -->실행 -> t1스레드 -> run() 
+
+(2) 멀티스레드와 메모리 
+두 메서드가 호출되면서 동작하는 과정을 메모리 관점에서 단계적으로 
+살펴보자. 
+
+단계1
+6장에서 JVM의 메모리 구조를 스택과 힙으로 설명한 바 있다. 
+이 스택공간은 스레드별로 생성된다. 최초 애플리케이션이 구동되면 
+동작하는 메인 스레드도 하나의 스택을 차지한다. 
+스택에서는 프로세스의 힙/공유 자원을 자유롭게 이용할 수 있다. 
+이후 스택에는 메인 메서드가 호출하는 메서드들이 쌓였다 없어지기를 반복한다. 
+
+단계2 
+그러다가 메인 스레드가 t1 스레드의 start()메서드를 호출하면 t1 스레드를 
+위한 별도의 스택 공간을 구성한다. 이 공간은 메인 스레드와는 전혀 무관한 
+t1 스레드만의 공간이다.  따라서 메인 스레드가 t1 스레드의 스택에 있는 
+지원을 사용할수는 없다. 하지만 힙/공유 자원은 두개의 스레드가 모두 접근 가능하다. 
+
+단계3
+이제 새로운 스택에서 t1 스레드의 run()메서드가 실행되면서 기존의 메인 스레드와 
+전혀 별도로 존재하는 흐름이 생겨나게 되었다. 이후 두스레드는 병렬(번갈아 가며)
+로 작업을 수행하게 된다. 따라서 앞선예제에서 "-"와 "@"가 뒤섞여 출력된다. 
+또한, 하나의 스레드가 작업을 종료하는 것은 다른 스레드와 무관하다. 메인 스레드가 
+실행하는 main() 메서드가 자신의 마지막 행에서 "main is over"를 출력하고 
+종료되었음에도 아직 다른 스레드가 할 일이 남아 있다면, 애플리케이션은 종료되지 
+않는 것이다. 모든 스레드가 종료 될 때 비로소 애플리케이션이 종료된다. 
+
+ex)  스레드별 스택 구성 과정 
+(1)최초의 메모리 구조
+--------------------------
+main() -> 힙/공유 자원 
+-------------------------
+메인 스레드 스택 
+
+(2)새로운 스택 생성
+--------------------------
+start() -> 힙/공유 자원 
+main()
+-------------------------
+t1 스레드 스택 
+
+(3)번갈아 가며 동작
+--------------------------
+main() , run() -> 힙/공유 자원 
+-------------------------
+
+(1)->(2)->(3)
+
+만약 start()를 호출하지 않고 코드에서 run() 메서드를 직접 
+호출하면 어떻게 될까? 이때는 run() 메서드가 메인 스레드에서 
+호출되는 것이므로 별도의 스택을 구성하지 않는다. 
+
+하나의 스택 활용 
+---------------------
+run() ->힙/공유 자원 
+main()
+
+메인 스레드 스택에서의 호출과 메모리 
+
+만약 [ch14.basic.SimpleThreadTest.java]에서 t1.start(), t2.start()를 
+t1.run(), t2.run() 이라고 변경 후 실행하면 언제나 다음과 같은 결과를 
+얻게 된다. t1과 t2가 스레드 객체임에도 불구하고 병렬 스레드로 동작하지 않고 
+메인 스레드에서 단순히 일반 객체의 메서드 처럼 동작하는 것이다. 
+
+ex)
+------------------------------@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@main is over
 
 ----------------------------------------------------
 3. 스레드의 상태와 제어 
 
 3.1 스레드의 상태 
 
+스레드들은 별도의 스택에서 따로따로 동작하기 때문에 제어하기가 쉽지 않다. 
+따라서 상태에 대해 정확히 이해하고 제어할 필요가 있다. 스레드의 상태 값은 
+Thread 내부에 State라는 enum으로 정의 되어 있으며 스레드 객체의 
+getState() 메서드를 이용해서 확인할수 있다. 
+
+Thread 객체의 상태(State)
+
+enum 상수 : 설명 
+
+NEW : 스레드 객체가 생성된 후 아직 start()가 호출되지 않은 상태 
+RUNNABLE : JVM선택에 의해 실행 가능한 상태 
+BLOCKED : 사용하려는 객체의 모니터 락이 풀릴 때까지 기다리는 상태 
+WAITING : sleep(), wait(), join() 등에 의해 정해진 시간 없이 대기중인 상태 
+TIMED_WAITING : sleep(), wait(), join() 등에 의해 정해진 시간 동안 대기중인 상태 
+TERMINATE : run()메서드의 종료로 소멸된 상태 
+
+다음은 스레드의 생애주기를 나타낸다. 
+
+(1)new Thread().start()
+NEW -> RUNNABLE --스레드 스케줄러->RUNNING--(2)run()->TERMINATE
+(3) sleep(), wait() join(), I/O 블록킹 
+(4) 시간 종료, notify(), interrupt(), I/O 종료 
+(5) yield
+RUNNING -> WAITING TIMED_WAITING(대기풀)-> RUNNABLE
+
+(1)최초 스레드 객체를 생성하면 NEW 상태이다. 이 상태의 객체는 타입만 
+Thread 일 뿐 스레드로서 동작은 하지 않는다. start() 메서드를 호출하면 
+스레드의 상태는 RUNNABLE로 변경된다. 이 상태에서 스레드 스케줄러에 
+의해 선택되면 동작할 수 있다. 만약 여러 개의 스레드가 RUNNABLE 
+상태에 있다면 선택되기 위한 스레드 간 경합이 일어난다. 
+따라서 특정 스레드의 정확한 동작 시점은 알수 없다. 
+
+(2) JVM이 스레드의 run() 메서드를 호출하면 스레드가 동작한다. 
+run() 메서드가 종료되면 스레드는 소멸(TERMINATE)된다. 
+스레드가 소멸된다는 것은 스레드의 스택 자체가 없어지는 것이므로 
+한번 소멸한 스레드는 더 이상 동작하지 않는다. 
+만약, 이 스레드의 동작이 필요하다면 다시 스레드를 생성하고 
+start() 하는 수밖에 없다. 
+
+(3) 동작 중인 스레드는 스레드의 sleep(), wait(), join() 메서드가 호출되거나 
+I/O에 의한 블로킹이 발생하는 경우 대기 풀(Waiting Pool)로 이동해서 
+대기 상태(WAITING 또는 TIMED_WAITING)로 변경된다. 
+대기 상태에서 스레드의 동작은 일시 정지된다. 
+
+(4) 대기 상태의 스레드는 sleep()이나 join()의 시간 종료, wait()에 대한 
+notify() 메서드 호출, interrupt() 메서드 호출, I/O 종료되는 경우 다시 
+RUNNABLE 상태로 변경된다. RUNNABLE 단계의 스레드는 다시 처음처럼 
+경합 과정을 거쳐 동작할 수 있다. 
+
+(5) 동작 중인 스레드에서 yield() 메서드가 호출되면 스레드는 동작을 멈춘다. 
+하지만  (3) 의 경우처럼 대기 상태로 이동하지는 않고 다시 
+RUNNABLE 상태로 이동해서 경합하게 된다. 
+
+BLOCKED 상태와 해지에 대해서는 뒤에서 다룬다. 
+
 ----------------------------------------------------
 3.2 스레드 선택과 우선순위
 
+스레드가 RUNNABLE 상태에서 선택될 때는 우선순위가 적용된다. 
+예를들어 메신저에서 채팅과 파일 전송, 두개의 작업이 스레드로 진행 중이라고 
+생각해보자. 둘 사이에 어떤 작업이 더 중요할까? 파일 전송은 잠시 멈춰도 
+사실 불평이 거의 발생하지 않는다. 하지만 채팅 메시지가 바로바로 
+전달되지 않으면 문제다. 이처럼 여러 스레드가 있을 때 특정 스레드가 
+가급적 먼저 실행되기 위해서는 우선순위가 높은 것이 좋다. 
+
+우선순위는 스레드의 중요도에 따라서 1~10 까지의 정수로 지정할 수 있다. 
+Thread 클래스에는 자주 사용되는 우선순위들이 상수값으로 정의 
+되어 있다. 
+
+ex)
+public final static int MIN_PRIORITY = 1;
+public final static int NORM_PRIORITY = 5;
+public final static int MAX_PRIORITY = 10;
+
+이중 NORM_PRIORITY 가 기본값이다. 
+
+스레드 우선순위는 setPriority()와 getPriority() 메서드로 
+설정할수 있다. 
+
+Thread 의 우선순위 관련 메서드 
+
+메서드명 : 선언부와 설명 
+setPriority() : public final void setPriority( int newPriority)
+newPriority로 스레드의 우선순위를 설정한다. 
+
+getPriority() : public final int getPriority()
+스레드 우선순위를 리턴한다. 
+
+우선순위를 적용한 스레드가 어떻게 동작하는지 예제를 통해
+살펴보자. 
+
+ex)
+package ch14.status;
+
+public class PriorityTest {
+	static class MessengerThread extends Thread {
+		public MessengerThread(String name) {
+			super(name);
+		}
+
+		public void run() {
+			for (int i = 0; i < 30; i++) {
+				System.out.print(this.getName());
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+		Thread fThread = new MessengerThread("F");
+		Thread tThread = new MessengerThread("T");
+		fThread.setPriority(Thread.MIN_PRIORITY);
+		tThread.setPriority(Thread.MAX_PRIORITY);
+		fThread.start();
+		tThread.start();
+	}
+}
+// 매번 다름 
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+FFFFFFFTTTFTTTTTTTTTTTTTTTTTTTTTTTTTTTFFFFFFFFFFFFFFFFFFFFFF
+
+실행 결과를 살펴보면 파일 전송 스레드를 먼저 시작했음에도 불구하고 
+전반적으로 우선 순위가 높은 텍스트 전송 스레드가 더 앞부분에 실행되는 
+것을 확인할수 있다. 하지만 우선순위가 높다고 해서 언제나 그 스레드가 
+실행되는 것이 아니고 한번 시작했다고 해서 끝까지 동작하지도 않는다. 
+
+이처럼 스레드 우선순위 의 역할은 실행될 확률이 높아지는 것뿐으로 우선순위
+만으로는 스레드를 100% 제어할수 없다. 
 ----------------------------------------------------
 3.3 sleep()을 통한 상태 제어 
 
+sleep() 메서드는 동작하는 스레드를 주어진 시간 동안 일시 정지시켜 
+대기풀에서 자게한다. 대기 중인 스레드는 설정 시간이 끝나거나 
+interrupt() 메서드가 호출되면 대기 풀에서 벗어나 다시 RUNNABLE 
+상태로 이동한다. 
+
+Thread 의 sleep() 메서드 
+메서드 명 : 선언부와 설명 
+
+sleep() : public static native void sleep(long milis) throws InterruptedException
+milis(1/1000초) 동안 동작중인 스레드를 대기풀에서 대기하게 한다. 
+millis 가 지나면 자동으로 RUNNABLE 상태로 이동한다. 
+
+public static void sleep(long milis, int nanos) throws InterruptedException
+스레드를 (milis + nanos)까지 대기 풀에서 대기하게 한다. 
+좀 더 세밀한 조절이 가능하다. 
+
+스레드를 이용해서 초시계를 만들어 보자.  초시계는 1초에 한번씩
+시간을 출력한다. 
+
+ex)
+
+package ch14.status;
+
+import java.time.LocalTime;
+
+public class SleepTest1 {
+
+	public static void main(String[] args) {
+		Timer timer = new Timer();
+		timer.start();
+	}
+
+	static class Timer extends Thread {
+		public void run() {
+			for (int i = 0; i < 3; i++) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				System.out.println("째깍: " + LocalTime.now());
+			}
+		}
+	}
+}
+//
+째깍: 08:49:02.065093600
+째깍: 08:49:03.066546600
+째깍: 08:49:04.066983700
+
+반복문에서 sleep() 메서드를 호출해서 1000ms 즉 1초씩 
+Thread를 대기 풀로 이동시킨다. 대기 풀에서 나온 후 다시 
+RUNNABLE -> 동작의 단계로 이동하면 그 시점의 시각을 출력한다. 
+
+출력 결과를 얼핏 살펴보면 1초씩 잘 증가하는 것처럼 보인다. 
+하지만 나노초 단위까지 살펴보면 정확히 1초가 아님을 알수 있다. 
+이것은 스레드가 대기 풀에서 1초를 쉬는 것은 정확하지만 이후 
+RUNNABLE -> 동작 의 단계를 거쳐야 실행되므로 다시 실행되기 
+위해서는 1초보다 더 걸릴수 밖에 없다. 
+
 ----------------------------------------------------
 3.4 join() 을 통한 상태 제어 
+
+556 /15/45
 
 ----------------------------------------------------
 3.5 interrupt()를 통한 대기 풀 탈출 

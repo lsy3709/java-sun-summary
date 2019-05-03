@@ -19537,16 +19537,367 @@ Thread의 join() 메서드
 
 메서드 명 : 선언부와설명
 
-join() :
+join() : public final void join() throws InterruptedException
+스레드가 소멸될때까지 대기한다. 
+
+public final synchronized void join(long milis) throws InterruptedException
+스레드가 소멸되는지 milis 간격으로 체크하고 소멸될때까지 대기한다. 
+
+public final synchronized void join(long milis, int nanos) throws InterruptedException
+nanos 까지 동원해서 좀 더 세밀하게 스레드 상태를 체크한다. 
+
+예를들어 로봇을 만드는 애플리케이션을 스레드로 만들어보면 팔을 만드는 스레드,
+몸통을 만드는 스레드, 조립하는 스레드로 구성할 수 있다. 
+이들을 각기 자유롭게 작업하는데 조립 스레드는 팔과 몸통 스레드의 작업이 
+끝나야만 작업이 가능하다. 이때 join()을 사용하면 조립 작업에 팔과 몸통 스레드를 참여시켜
+끝날 때까지 대기한다. 
+
+메인스레드
+main(){
+//팔작성 스레드.start()
+//몸통 작성 스레드.start()
+//조립 스레드.start()
+}
+
+팔 작성 스레드 
+run(){
+// do something
+}
+
+몸통 작성 스레드 
+run(){
+// do something 
+}
+
+조립 스레드 
+run(){
+//팔작성 스레드.join()
+//몸통 작성 스레드.join()
+//do something
+}
+
+팔 및 몸통 작성이 끝나면 조립 .
+
+다음 예는 메인 스레드와 9개의 구구단 스레드가 동작하는 구구단 프로그램.
+9개의 스레드는 각각의 단을 배열에 저장한다. 단 숫자를 곱할 때마다 
+1초씨 sleep()을 호출해서 쉰다. 
+메인 스레드에서는 구구단 스레드들이 각 단을 완성하면 최종 결과를 출력한다. 
+
+ex)
+package ch14.status;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class JoinTest {
+	static class GuguThread extends Thread {
+		private int dan;
+		String[] result = new String[9];
+
+		public GuguThread(int dan) {
+			this.dan = dan;
+		}
+
+		public void run() {
+			for (int i = 1; i < 10; i++) {
+				result[i - 1] = dan + "*" + i + "=" + (dan * i);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			System.out.print(dan + "단완료\t");
+		}
+	}
+
+	public static void main(String[] args)  {
+		List<GuguThread> gugus = new ArrayList<>();
+
+		for (int i = 1; i < 10; i++) {
+			GuguThread gugu = new GuguThread(i);
+			gugus.add(gugu);
+			gugu.start();
+		}
+
+		for (GuguThread gugu : gugus) {
+			try {
+				gugu.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println("\n구구단 출력");
+		for (GuguThread gugu : gugus) {
+			System.out.println(Arrays.toString(gugu.result));
+		}
+	}
+}
+//
+1단완료	2단완료	3단완료	4단완료	5단완료	6단완료	7단완료	8단완료	9단완료	
+구구단 출력
+[1*1=1, 1*2=2, 1*3=3, 1*4=4, 1*5=5, 1*6=6, 1*7=7, 1*8=8, 1*9=9]
+[2*1=2, 2*2=4, 2*3=6, 2*4=8, 2*5=10, 2*6=12, 2*7=14, 2*8=16, 2*9=18]
+[3*1=3, 3*2=6, 3*3=9, 3*4=12, 3*5=15, 3*6=18, 3*7=21, 3*8=24, 3*9=27]
+[4*1=4, 4*2=8, 4*3=12, 4*4=16, 4*5=20, 4*6=24, 4*7=28, 4*8=32, 4*9=36]
+[5*1=5, 5*2=10, 5*3=15, 5*4=20, 5*5=25, 5*6=30, 5*7=35, 5*8=40, 5*9=45]
+[6*1=6, 6*2=12, 6*3=18, 6*4=24, 6*5=30, 6*6=36, 6*7=42, 6*8=48, 6*9=54]
+[7*1=7, 7*2=14, 7*3=21, 7*4=28, 7*5=35, 7*6=42, 7*7=49, 7*8=56, 7*9=63]
+[8*1=8, 8*2=16, 8*3=24, 8*4=32, 8*5=40, 8*6=48, 8*7=56, 8*8=64, 8*9=72]
+[9*1=9, 9*2=18, 9*3=27, 9*4=36, 9*5=45, 9*6=54, 9*7=63, 9*8=72, 9*9=81]
+
+Thread.sleep()을 통해 1초씩 쉬면서 result 에 구구단을 저장한다. 
+전체를 완성하는데 9초 이상의 시간이 소요된다. 
+
+구구단을 저장하는 작업이 끝나면 완료 메시지를 남긴다. 
+
+GuguThread들을 관리할 List 를 선언한다. 
+
+9개의 GuguThread를 만들어서 List에 담고 start()를 호출해서 RUNNABLE
+상태로 만든다. 
+
+메인 스레드에서 각 GuguThread 객체의 join()을 호출함으로써 다른 
+스레드가 종료될 때까지 메인 스레드는 대기 상태로 존재한다. 
+
+모든 스레드가 종료 후 메인 스레드가 다시 
+'RUNNABLE > 동작' 으로 상태를 변경하면서 구구단 내용을 출력한다. 
+
+출력 결과를 살펴보면 9개의 스레드가 병렬로 동작하므로 순서 없이 구구단 
+작성이 완료되고 모든 구구단 스레드들의 동작이 끝나면 마지막으로 메인 
+스레드가 출력함을 알수 있다. 
+40행의 join() 메서드 호출 부분을 주석 처리하고 실행해보면 차이점을 알수 
+있다. 
 
 ----------------------------------------------------
 3.5 interrupt()를 통한 대기 풀 탈출 
 
+sleep()이나 join()으로 인해 대기 풀에서 대기 중인 스레드들은 지정된 시간이 
+지나거나 끼워 넣었던 스레드가 종료되면 자동으로 RUNNABLE 상태로 
+이동한다. 그런데 대기 중인 스레드를 임의로 RUNNABLE 상태로 이동시켜야 할 
+경우도 있다. 예를 들어 미디어 플레이어를 만들고 있다면 재생 스레드에는 
+일시 정지와 다시 시작이 필요하다. 
+일시 정지는 재생 스레드가 언제 다시 시작할지 알수 없으므로 sleep()을사용 
+할것이다. 특정 시점에 대기 중인 재생 스레드를 동작 시키려면 interrupt()를 
+호출하면 된다. interrupt()는 대기 중인 스레드에게 InterruptedException을 
+발생시켜 즉시 RUNNABLE 상태로 이동시킨다. 
+sleep()과 join() 메서드가 InterruptedException을 throws 처리하는 이유는 
+바로 interrupt() 의 필요성 때문이다. 
+
+Thread 의 interrupt() 메서드 
+
+메서드명 : 선언부와 설명 
+interrupt() : public void interrupt()
+대기 중인 스레드를 강제로 깨워서 RUNNABLE 상태로 바로 이동하게 한다. 
+
+다음 예는 1분간 sleep() 하려는 MinuteAlarmThread를 메인 스레드에서 
+10초만에 강제로 깨우는 과정을 처리하는 예이다. 
+
+ex)
+
+package ch14.status;
+
+public class InterruptTest {
+	static class MinuteAlarmThread extends Thread {
+		public void run() {
+			try {
+				Thread.sleep(1000 * 60);
+			} catch (InterruptedException e) {
+				System.out.println("깜짝이야.");
+			}
+			System.out.println("시간이 되었습니다.");
+		}
+	}
+
+	public static void main(String[] args) {
+		Thread timeChecker = new MinuteAlarmThread();
+		timeChecker.start();
+
+		try {
+			Thread.sleep(1000 * 10);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		timeChecker.interrupt();
+	}
+}
+//
+깜짝이야.
+시간이 되었습니다.
+//10초후 출력 
+
+timeChecker의 run() 메서드에서는 sleep() 메서드를 호출해서 
+1분(1000*60) 간 대기 상태에 존재하게 된다. 만약 이 스레드의 
+interrupt()가 호출된다면 7행에 예외가 발생하고 8행을 통해 예외가 
+처리된 후 나머지 동작 즉 11행부터 진행된다. 
+
+메인 스레드 역시 sleep() 메서드를 통해 10초 동안 대기상태에 빠진다. 
+이후 timeChecker의 interrupt()를 호출하면 timeChecker는 계획보다 
+50초 빨리 깨어나서 동작한다. 
+
 ----------------------------------------------------
 3.6 yield()를 통한 상태 제어 
 
+sleep() 이나 join()은 스레드의 상태를 대기 상태로 변경하는 반면 
+yield()는 대기상태로 변하지 않고 동일한 우선순위를 가진 다른 스레드에게 
+실행을 양보하고 즉시 RUNNABLE 상태로 변경된다. 
+
+Thread의 yield() 메서드 
+
+메서드명 : 선언부와설명
+
+yield : public static native void yield()
+스레드 스케줄러에게 이 스레드가 실행을 양보할수 있음을 알려준다. 
+
+ex)
+package ch14.status;
+
+public class YieldTest {
+	static class YieldThread extends Thread {
+		String symbol;
+
+		public YieldThread(String symbol) {
+			this.symbol = symbol;
+		}
+
+		public void run() {
+			for (int i = 0; i < 60; i++) {
+				if (i % 2 == 0) {
+					System.out.print(symbol);
+				} else {
+					Thread.yield();
+				}
+			}
+		}
+	}
+	
+	public static void main(String[] args) {
+		new YieldThread("_").start();
+		new YieldThread("^").start();
+	}
+}
+// 실행결과는 매번 달라짐 
+_^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^_____________________________
+
 ----------------------------------------------------
 3.7 스레드의 종료 
+
+561 20/45
+
+스레드는 run() 메서드가 끝나면 자동으로 종료된다. 그런데 내부의 상황에 의해 
+스레드가 종료될 수도 있지만, 외부의 요건에 의해 스레드를 종료시켜야 
+할 때도 있다. 이를 위해 Thread 클래스에는 stop() 메서드가 제공된다. 
+하지만 이 메서드는 사용중지 권고(deprecated) 되어 있다. 
+즉 더 이상 쓰면 안된다. 
+
+Thread 종료를 위한 stop() 메서드 
+
+stop() : public final void stop() 
+스레드를 즉시 중지시킨다. 
+
+이 메서드가 deprecated된 이유는 안전성을 위함이다. stop()
+이 호출되면 스레드는 바로 강제 종료된다. 만약 스레드에서 다른 
+파일이나 네트워크 연결 등 시스템의 다른 자원을 사용 중이었다면, 
+이 자원을 반납할 기회가 없게 된다. 스레드를 안정적으로 종료시키기 
+위해서는 플래그(flag)  값을 이용해서 내부에서 자연스럽게 종료할 수 
+있도록 처리해야 한다. 
+
+다음 예를 살펴보자. ResourceUseThread는 시작하면서 시스템 자원을 
+사용한다. 이 스레드를 중지시키기 위해 stop() 메서드를 이용하는 경우와 
+종료되는 상황을 만드는 경우 두가지를 사용해보자. 
+
+ex)
+package ch14.status;
+
+import java.util.Scanner;
+
+public class StopTest {
+	static class ResourceUseThread extends Thread {
+		boolean flag = true;
+
+		public void run() {
+			System.out.println("자원 획득");
+			while (flag) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+                System.out.print("자원사용");
+			}
+			System.out.println("자원 반납");
+		}
+	}
+
+	public static void main(String[] args) {
+		ResourceUseThread t = new ResourceUseThread();
+		t.start();
+
+		Scanner scan = new Scanner(System.in);
+		if (scan.nextLine().equals("s")) {
+			t.stop();
+		} else {
+			t.flag = false;
+		}
+		scan.close();
+		System.out.println("main over");
+	}
+}
+//s 이외의 문자를 입력하는 경우 
+자원 획득
+자원사용자원사용자원사용자원사용
+main over
+자원사용자원 반납
+!
+//s 문자를 입력하는 경우 
+자원 획득
+자원사용자원사용자원사용자원사용
+main over
+
+ResourceUseThread의 동작을 정지시킬 것인지 파악하기 위한 플래그 
+값을 설정한다. 
+
+run() 메서드 내부에서 자원을 획득한 후 flag가 true 인 경우 반복문 
+내에서 자원을 사용한다. 만약 반복문이 종료된다면 19행처럼 
+자원이 반납된다. 
+
+ResourceUseThread 타입의 t 객체를 만들고 시작시킨다. 
+
+Scanner 를 통해 's'를 입력받으면 t의 stop() 이 호출된다. 
+출력 결과를 보면 스레드는 자원을 반납하지 못하고 즉시 종료된다. 
+
+'s'이외의 입력을 받으면 t의 flag를 false로 바꿔 반복문이 종료되고 자원을 
+성공적으로 반납하게 된다. 
+
+한번 run() 메서드가 끝나서 종료된 스레드는 생존주기가 완전히 소멸된다
+(TERMINATE). 이 말은 스레드 객체가 소멸(FINALIZE) 된다는 뜻이 아니라 
+스레드가 동작하는 스택 자체가 없어진다는 뜻이다. 
+한번 소멸된 스레드는 다시 start()를 통해서 RUNNABLE로 이동할수 없다. 
+소멸된 스레드의 start() 메서드를 호출하면 IllegalAThreadStateException 
+이 발생한다. 스레드는 반드시 NEW 인 상태에서만 start() 가 호출될수 있다. 
+
+ex)
+public class DeadThreadTest{
+static class SomeThread extends Thread{
+public void run() {
+System.out.println("thread is over");
+}
+}
+public static void main(String[] args) throws InterrupedException {
+SomeThread sThread = new SomeThread();
+sThread.start();
+Thread.sleep(1000*1);
+sThread.start(); // IllegalStateException 발생 
+}
+}
+
+해당 스레드의 동작이 필요하다면 다시 새로운 스레드 객체를 생성하고 
+start()를 호출해야 한다. 
+
+
+563 22/45 
 
 ----------------------------------------------------
 3.8 데몬 스레드

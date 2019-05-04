@@ -19896,16 +19896,180 @@ sThread.start(); // IllegalStateException 발생
 해당 스레드의 동작이 필요하다면 다시 새로운 스레드 객체를 생성하고 
 start()를 호출해야 한다. 
 
-
 563 22/45 
-
 ----------------------------------------------------
 3.8 데몬 스레드
+
+데몬 스레드(Daemon Thread)란 일반 스레드의 작업을 돕는 보조적인 스레드를 
+말한다. 일반적으로 데몬 스레드들은 다른 스레드가 동작하지 않으면 의미가 
+없는 경우가 많다. 예를들어 문서 편집 작업 도중에 한번씩 동작하는 
+자동 저장 스레드는 편집기를 종료하는 순간 의미가 없어진다. 
+자바 애플리케이션의 가비지 컬렉션의 경우도 JVM이 종료된다면 더이상
+필요가 없다. 
+
+이런 데몬 스레드는 스스로도 종료될수 있지만 다른 스레드들이 종료되는 상태에서도 
+종료된다. 이 점만 빼면 다른 스레드와 동일하다. 
+
+일반적으로 데몬 스레드들은 무한 루프를 이용해 run() 메서드 이후 대기 상태에 
+있다가 조건에 따라 실행된다. 
+
+데몬 스레드를 만들기 위해서는 Thread의 setDaemon() 메서드를 이용하면 되고 
+데몬 스레드가 생성한 스레드들은 모두 데몬 스레드가 된다. 
+
+Thread에서의 데몬 스레드 설정을 위한 setDaemon()메서드 
+
+메서드 명 : 선언부와 설명 
+setDaemon() : public final void setDaemon(boolean on)
+:스레드를 데몬 스레드로 만들 것인지 설정한다. 
+
+ex)
+package ch14.status;
+
+public class DaemonThreadTest {
+	static class SaveDaemon extends Thread {
+		public SaveDaemon() {
+			this.setDaemon(true);
+		}
+
+		public void run() {
+			while (true) {
+				try {
+					Thread.sleep(1000 * 5);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				System.out.println("자동 저장함");
+			}
+		}
+	}
+
+	public static void main(String args[]) {
+		Thread daemon = new SaveDaemon();
+		daemon.start();
+
+		for (int i = 0; i < 20; i++) {
+			try {
+				Thread.sleep(1000);
+				System.out.println("작업 중... " + i);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("main over");
+	}
+}
+//
+작업 중... 0
+작업 중... 1
+작업 중... 2
+작업 중... 3
+자동 저장함
+작업 중... 4
+작업 중... 5
+작업 중... 6
+작업 중... 7
+작업 중... 8
+자동 저장함
+작업 중... 9
+작업 중... 10
+작업 중... 11
+작업 중... 12
+작업 중... 13
+자동 저장함
+작업 중... 14
+작업 중... 15
+작업 중... 16
+작업 중... 17
+작업 중... 18
+자동 저장함
+작업 중... 19
+main over
+
+위 코드에서는 SaveDaemon 스레드가 종료되는 조건이 설정되어 있지 않다 
+하지만, 데몬 스레드이기 때문에 메인스레드가 종료되는 순간 자동으로 
+종료된다. 
 
 ----------------------------------------------------
 4. 멀티스레드 의 문제점과 해결 
 
 4.1 데이터 공유와 동기화 문제 
+
+멀티스레드의 장점 중 하나는 공유 데이터를 여러 스레드에서 사용할수 있다는 점이다. 
+하지만 이 점은 자칫 큰 문제를 일으킬 수도 있다. 한집(프로세스)에 두 자매(스레드)가 
+하나의 옷(공유 데이터)을 같이 입는다면 어떤 문제가 발생하고 그 문제를 
+어떻게 해결해야 할까? 뻔히 알고 있는 답을 전통적인 은행 시스템 예에서 
+살펴보자. 
+
+현실의 Banking 시스템을 생각해보면 계좌 하나(Account)를 은행 창구, 모바일 뱅킹, 
+인터넷 뱅킹 등 다양한 방식으로 접근할 수 있다. 이때 계좌는 공유데이터가 되고 
+접근 방식들은 스레드가 된다. 
+
+ex)
+Banking 애플리케이션
+출금 스레드1 -> Account int balance; (공유데이터 ) <- 입금 스레드 1
+출금 스레드2 -> Account int balance; (공유데이터 ) <- 입금 스레드 2
+
+Banking 애플리케이션과 공유 데이터 
+
+문제는 이 공유 데이터에 여러 스레드가 동시에 접근해서 수정하면서 발생한다. 
+
+최초 Account의 balance에는 100원이 설정되어 있다. 이때 출금 스레드 1이 
+100원 값을 읽고 20원을 출금해서 80원으로 만들 계획이다.
+(아직 출금은 되지 않은 상태이다. ) 거의 동시에 출금 스레드 2가 역시 100원값을 
+읽고 60원을 출금해서 40원으로 만들 계획을 잡는다. 스레드들이 
+동작하면서 첫번째 스레드가 80원으로 변경하고 두번째 스레드는 40원으로 변경한다. 
+
+출금스레드 1: 100 -> 100 - 20 
+
+Account.balance : 100  80  40 
+
+출금스레드 2 : 100 -> 100 - 60 
+
+멀티스레드에서의 공유 데이터 신뢰성 문제 
+
+결과적으로 두개의 스레드가 작업을 마치면 결과는 나중에 작업을 끝낸 출금 스레드 2
+의 결과로 40 이 될것이다. 정학한 결과는 (20+60) 이 출금된 20원이 되어야함은 
+너무 당연한 일이다. 이런 상황을 데이터의 신뢰성이 깨졌다고 한다. 
+
+예제를 통해 문제가 되는 은행 시스템을 만들어보자. 
+
+Account는 계좌 정보로 잔액을 나타내는 balance와 입금(deposit)
+및 출금 (withdraw) 메서드로 구성된다. 
+
+ex)
+package ch14.banking;
+
+public class Account {
+	protected int balance;
+
+	public Account(int balance) {
+		this.balance = balance;
+	}
+
+	public int withdraw(int money) {
+		String threadName = Thread.currentThread().getName();
+		if (balance >= money) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			balance -= money;
+			System.out.println(threadName+" 출금: 잔액: "+balance);
+		} else {
+			System.out.println(threadName+": 잔액 부족 출금 불가");
+		}
+		return balance;
+	}
+
+	public int deposit(int money) {
+		return balance += money;
+	}
+}
+//
+567 26/45
+
+
 
 ----------------------------------------------------
 4.2 공유 데이터의 동기화 처리 

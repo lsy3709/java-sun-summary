@@ -20069,10 +20069,127 @@ public class Account {
 //
 567 26/45
 
+package ch14.banking;
 
+public class WithdrawThread extends Thread {
+	Account account;
+	int money;
+	boolean flag = true;
 
+	public WithdrawThread(String name, Account account, int money) {
+		super(name);
+		this.account = account;
+		this.money = money;
+	}
+
+	public void run() {
+		for (int i = 0; i < 6 || flag; i++) {
+			int balance = account.withdraw(money);
+			if (balance <= money) {
+				flag = false;
+			}
+		}
+	}
+}
+//
+
+ex3)
+package ch14.banking;
+
+public class BankingClient {
+	public static void main(String[] args) {
+		Account account = new Account(5000);
+		WithdrawThread iBanking = new WithdrawThread("인터넷뱅킹", account, 1000);
+		WithdrawThread mBanking = new WithdrawThread("모바일뱅킹", account, 1000);
+		iBanking.start();
+		mBanking.start();
+	}
+}
+//매번 다름
+인터넷뱅킹 출금: 잔액: 4000
+모바일뱅킹 출금: 잔액: 4000
+모바일뱅킹 출금: 잔액: 2000
+인터넷뱅킹 출금: 잔액: 2000
+인터넷뱅킹 출금: 잔액: 0
+모바일뱅킹 출금: 잔액: 0
+인터넷뱅킹: 잔액 부족 출금 불가
+인터넷뱅킹: 잔액 부족 출금 불가
+모바일뱅킹: 잔액 부족 출금 불가
+인터넷뱅킹: 잔액 부족 출금 불가
+모바일뱅킹: 잔액 부족 출금 불가
+모바일뱅킹: 잔액 부족 출금 불가
+
+출력 결과를 살펴보면 이상한 점이 한 두개가 아니다.
+
+총 5000 원을 1000원씩 출금하는데 8차례나 출금에 성공했다.
+결과의 1,2 행을 보면 두 개의 스레드가 출금했는데 
+잔액이 둘다 4000 원이다 . 
+마지막을 보면 잔액이 출금액보다 작으면 출금할수 없었는데 최종 
+잔액이 음수가 나왔다. 
+ 공유 데이터인 Account에 대한 신뢰가 완전히 깨진 상태다. 
 ----------------------------------------------------
 4.2 공유 데이터의 동기화 처리 
+
+위 문제는 은행 뱅킹과 인터넷 뱅킹 스레드가 거의 동시에 공유 데이터인 
+Account에 접근해서 상태를 바꾸면서 발생했다. 
+이런 공유 데이터에 대한 문제 해결에는 '세마포어(Semaphore)'라는 개념이 
+사용된다. 세마포어란 열차 운행 시스템에서 사용하는 신호기를 말하는데 
+stop(멈춤)과 clear (비어 있음) 두 상태를 갖는다. 
+
+두 대의 열차(스레드가) 서로 반대 방향으로 운행하는 열차 노선을 생각해보자. 
+당연히 복선으로 구성한다면 고민할 필요가 없겠지만 그리 많지 않은 운행 
+횧수를 고려하면 전체를 복선으로 하기에는 자원의 낭비가 많다. 
+따라서 많은 구간이 단선으로 처리된다. 그러다 보니 두 열차가 함께 운행하는 
+단선의 공유 구간(공유 데이터)이 발생한다. 두대의 열차가 이 공유 구간에 
+같이 들어서면 충돌이 발생할 것이다. 
+
+<--                          ---
+  S2   ---공유구간 ---S1
+--                             -->
+
+충돌을 피하기 위해서 A 열차는 공유 구간 진입 전에 선로가 비어 있는지, 
+즉 세마포어 s1이 clear 상태인지 확인한다. 비어 있다면 진입이 가능하다.
+공유 구간에 진입하면서 s1을 stop으로 바꿔서 공유 구간을 사용 중임을 
+표시하면 s2 역시 stop 상태로 변경된다. 
+만약 이때 열차 B가 공유 구간에 접근한다면 stop 신호를 보고 멈추게 된다. 
+즉 동시에 공유 공간을 사용하지 못하게 하는 것이다. 
+
+A가 공유 구간을 빠져나가면서 다시 s2를 clear로 변경하면 이제 B가 
+공유 구간을 운행 할수 있게 된다. B는 다시 s2를 stop으로 변경 후 
+공유 구간을 주행한다. 이 과정을 반복하면 구간 내 충돌이 발생하지 
+않게 된다. 
+
+멀티스레드 프로그래밍에서는 이 문제를 해결하기 위해 lock 개념과 
+synchronized 키워드를 사용한다. synchronized는 메서드 등 블록에 
+사용하며 해당 영역(임계영역, critical section )은 동시에 하나의 스레드만 
+사용할수 있도록 한다. 즉 공유 구간에 대한 설정이다. 
+synchronized 구간을 사용하기 위해서 스레드들은 객체의 lock이 필요하다. 
+모든 자바 객체는 lock을 가지고 있다. 
+
+만약 스레드 t1이 synchronized 구간에 접근하려면 먼저 객체의 lock을 확인한다. 
+만약 객체가 lock을 가지고 있다면 lock을 t1이 가져온 후 sychronized 영역을 
+실행한다. t1 이 작업 중일 때 다른 스레드 t2가 접근한다면 역시 
+lock을 확인해야 하는데 이미 t1이 가져가 버렸기 때문에 lock 이 없을 것이고 
+t2는 t1이 lock을 반납할 때까지 기다린다. 
+t1이 작업을 마치고 lock을 다시 공유 객체에게 반납하면 t2가 다시 lock을 
+얻어서 작업을 수행한다. 
+
+ex)
+열차 운행 시스템과 멀티스레드 프로그래밍 
+
+열차 운행 시스템 : 멀티스레드 프로그래밍 : Banking 애플리케이션 예 
+열차  : 스레드 : iBanking, mBanking
+선로 : 공유 객체 : account 
+공유 구간 : 임계영역 : account 의 withdraw(), deposit() 
+세마포어 : 락(lock) : account 객체의 lock 
+세마포어 설치 : synchronized 영역 설정 : synchronized void withdraw()등 
+
+(1) sychronized 키워드 사용 
+
+synchronized 키워드 는 
+
+570 29/45
+
 
 ----------------------------------------------------
 4.3 wait() 아 notify(), notifyAll()

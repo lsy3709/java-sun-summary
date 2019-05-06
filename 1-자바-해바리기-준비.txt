@@ -20960,14 +20960,112 @@ gugudan 안에 모든 내용을 출력해서 값을 확인한다.
 
 1.1 스트림의 개념 
 
-
 587 1/53
+
+I/O 란 데이터의 입력(Input)과 출력(Output)을 함께 일컫는 말이다. 
+이제까지의 예에서 키보드에서 발생하는 데이터를 Scanner를 통해 프로그램에서 
+받아들이는 것이 입력이고 System.out.println()을 통해 프로그램의 값을 모니터로 
+표현하는 것이 출력이다. 
+
+자바의 I/O는 스트림(Stream)을 이용해서 데이터를 주고받는 구조로  되어 있다. 
+스트림은 실생활에서 수도관에 비유할 수 있다. 수도관은 취수장에서 목적지인 
+수도꼭지까지 한 방향으로만 계속 물을 흘려보낸다. 스트림도 마찬가지이다. 
+스트림은 데이터의 소스에서 목적지까지 데이터를 이동시키는 일종의 통로이다. 
+이때 데이터의 소스나 목적지를 노드(node)라고 부른다. 노드의 종류에는 키보드,
+모니터는 물론 파일이나 메모리, 데이터베이스, 원격지의 다른 프로그램이 될수도 
+있다. 이 노드에 연결된 스트림을 노드 스트림이라고 한다. 
+
+스트림은 방향이 있는데 데이터를 받아들일 때는 InputStream(입력 스트림)이 
+사용되고 데이터를 보낼 때는 OutputStream(출력 스트림)이 사용된다. 
+스트림을 통해서 전송되는 데이터의 단위는 기본적으로 바이트(byte)이다. 
+그런데 한글과 같은 문자들은 바이트로 처리되기 어렵다. 그래서 문자(char)
+단위 데이터가 전송되기도 하는데 이때는 InputStream 대신 Reader를 사용하고, 
+OutputStream 대신 Writer를 사용한다. 
+
+ex)
+자바 I/O 의 기본구조 
+
+노드의 종류 
+키보드, 모니터, 메모리, 파일, 데이터베이스, 네트워크 ...
+
+노드 -> keyboard 입력스트림: InpuStream, Reader-> Program 
+Program -> 출력스트림 : OutputStream, Writer -> monitor 
+
+(1)노드 스트림의 종류 
+입출력과 관련된 I/O 스트림은 java.io 패키지에 선언된다. 
+I/O 스트림은 전송되는 데이터 타입, 노드 타입, 그리고 방향에 따라 
+매우 다양한 클래스가 제공된다. 
+이 클래스들의 이름은 위 3가지 조건의 조합으로 구분되는데 원리만 
+이해하면 쉽게 구별할수 있다. 
+
+첫 번째 기준은 전송할 데이터의 타입이 byte 인가 char인가이다. 
+byte 단위의 데이터가 이동할 경우 XXStream, char 단위의 데이터가 
+이동할 때는 XXer이 된다. 컴퓨터의 모든 것은 byte로 이루어져 있기 
+때문에 byte 스트림으로는 문자로 구성된 텍스트는 물론 영상과 같은 
+바이너리(binary) 형태의 데이터도 전송할 수 있다. 반면 한글이나 
+한자 같은 문자들은 한 글자가 2byte 이상으로 구성되어 있기 때문에 
+byte 스트림으로 전송할 때 문자열이 깨지는 문제가 발생할 수 있다. 
+그래서 텍스트를 전송할 때는 char 기반의 스트림을 사용하는 것이 
+좋다. 
+
+두번째 기준은 데이터의 이동 방향이다. 데이터를 읽어 들이면 
+InpuStream 또는 Reader, 출력하면 OutputStream 또는 Writer
+가 된다. 
+
+다음은 연결되는 노드의 타입이다. 노드 중 키보드와 모니터는 단방향이다. 
+즉 키보드는 InpuStream 또는 Reader만 연결이 가능하고, 모니터는 
+OutputStream 이나 Writer가 연결된다. 다른 노드들은 일반적으로
+양방향인데 파일과 연결할 때는 File, 다른 스레드와 연결에는 Piped, 
+메모리를 이용할 때는 Array가 사용된다. Array는 저장할 데이터의 
+타입에 따라 ByteArray, CharArray로 나뉜다. char 스트림의 경우 
+String을 노드로 사용할 수도 있다. 이런 규칙들에 따라 노드 스트림을 
+정리하면 다음과 같다. 
+
+노드 스트림의 종류 
+
+데이터 타입에 따라 
+byte or char? 
+
+방향에 따라 
+입력 또는 출력?
+
+노드 타입에 따라 
+
+최종 노드 스트림 
+
+1)byte->XXStream->InputStream->키보드->InputStream
+2)byte->XXStream->InputStream->File->FileInputStream
+3)byte->XXStream->OutputStream->모니터->OutputStream
+4)byte->XXStream->OutputStream->File->FileOutputStream
+5)byte->XXStream->OutputStream->ByteArray->
+ByteArrayInputStream, ByteArrayOutputStream
+6)byte->XXStream->OutputStream->Pipe->
+PipedInputStream, PipedOutputStream
+
+1)char->XXer->Reader->키보드->Reader
+2)char->XXer->Reader->File->FileReader
+3)char->XXer->Reader->CharArray->CharArrayReader
+4)char->XXer->Reader->String->StringReader
+5)char->XXer->Reader->Pipe->PipeReader
+
+5)char->XXer->Writer->모니터->Writer
+6)char->XXer->Writer->File->FileWriter
+7)char->XXer->Writer->CharArray->CharArrayWriter
+8)char->XXer->Writer->String->StringWriter
+9)char->XXer->Writer->Pipe->PipeWriter
 
 
 ----------------------------------------------------
 2. 노드 스트림
 
+모든 스트림은 노드 스트림에서 시작하며 노드 스트림들의 최상위 
+인터페이스는 키보드에 연결되는 InpuStream과 Reader, 
+모니터에 연결되는 OutputStream과 Writer이다. 
+나머지 노드 스트림들은 노드만 변경될뿐 사용법은 동일하다. 
+
 2.1 키보드를 이용한 InputStream 과 Reader 
+
+589 3/53
 
 ----------------------------------------------------
 2.2 모니터를 이용한 OutputStream 과 Writer 

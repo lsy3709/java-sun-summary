@@ -20186,24 +20186,771 @@ ex)
 
 (1) sychronized 키워드 사용 
 
-synchronized 키워드 는 
+synchronized 키워드는  메서드 또는 블록에 사용할 수 있다. 메서드에 
+sychronized를 사용하는 것이 가장 간단한 방법이다. 하지만 만약 이 메서드 
+내에 공유 데이터와 연관된 작업과 무관한 작업이 함께 있을 경우 공유 데이터와 
+무관한 작업도 하나의 스레드만 사용 가능하기 때문에 성능상 좋지 않을수 
+있다. 
 
-570 29/45
+ex)
+public sychronized void method() {
+// do something - 공유 데이터와 연관된 작업
+// do something - 공유 데이터와 무관한 작업
+}
+
+반면 별도의 sychronized 블록을 만들고 대상 객체(target_object)를 
+설정하면 공유 데이터와 연관된 작업과 그렇지 않은 작업을 분리할 
+수 있다. 여기서 대상 객체는 lock 을 확인할 객체를 말한다. 
+
+ex)
+public void method() {
+synchronized(target_object) {
+// do something - 공유 데이터와 연관된 작업
+}
+// do something - 공유 데이터와 무관한 작업
+}
+
+sychronized 블록은 스레드들이 병행해서 수행할 수 없는 공간이므로 
+이 블록이 많다면 멀티스레드의 성능이 그만큼 떨어진다. 
+따라서 필요한 곳에서만 사용하는 것이 중요하다. 
+
+컬렉션 프레임워크에서 ArrayList와 Vector 계열을 설명하면서 Vector는 
+과거 버전으로 멀티스레드에 안전하지만, 성능이 좋지 않다고 설명했는데 
+바로 synchronized의 사용 때문이다. Vector의 메서드들은 대부분 
+synchronized 처리되어 있고 ArrayList는 그렇지 않다. 
+
+ex)
+/* Vector 의 size() */
+public synchronized int size() {
+return elementCount;
+}
+
+/* ArrayList 의 size() */
+public int size() {
+return size;
+}
+
+그럼 앞서 작성했던 Account를 수정해서 멀티스레드 환경에서 
+안전한 synchronized 버전의 SynchronizedAccount를 만들어보자. 
+
+ex)
+package ch14.banking;
+
+public class SynchronizedAccount extends Account {
+
+	public SynchronizedAccount(int balance) {
+		super(balance);
+	}
+
+	public synchronized int withdraw(int money) {
+		String threadName = Thread.currentThread().getName();
+		if (balance >= money) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			balance -= money;
+			System.out.println(threadName + " 출금: 잔액: " + balance);
+		} else {
+			System.out.println(threadName + ": 잔액 부족 출금 불가");
+		}
+		return balance;
+	}
+
+	public synchronized int deposit(int money) {
+		return balance += money;
+	}
+}
+
+로직은 변경된 부분이 없고 단지 withdraw() 와 deposit() 메서드 
+선언부에 synchronized만 추가되었다. 
+이제 BankingClient2를 이용해서 SynchronizedAccount의 동작을 
+살펴보자. 
+
+ex2)
+package ch14.banking;
+
+public class BankingClient2 {
+	public static void main(String[] args) {
+		Account account = new SynchronizedAccount(5000);
+		WithdrawThread iBanking = new WithdrawThread("인터넷뱅킹", account, 1000);
+		WithdrawThread mBanking = new WithdrawThread("모바일뱅킹", account, 1000);
+		iBanking.start();
+		mBanking.start();
+	}
+}
+//
+인터넷뱅킹 출금: 잔액: 4000
+인터넷뱅킹 출금: 잔액: 3000
+모바일뱅킹 출금: 잔액: 2000
+모바일뱅킹 출금: 잔액: 1000
+모바일뱅킹 출금: 잔액: 0
+인터넷뱅킹: 잔액 부족 출금 불가
+인터넷뱅킹: 잔액 부족 출금 불가
+인터넷뱅킹: 잔액 부족 출금 불가
+인터넷뱅킹: 잔액 부족 출금 불가
+모바일뱅킹: 잔액 부족 출금 불가
+모바일뱅킹: 잔액 부족 출금 불가
+모바일뱅킹: 잔액 부족 출금 불가
+
+이제 출력 결과가 1000원씩 안정적으로 출금된 것을 확인할 수 있다. 
+다만 아직 아쉬운 부분은 잔액 부족 상황에서 계속 인출을 시도하는 부분이다. 
+
+(2) lock pool 
+sychronized 블록을 실행하면서 lock을 획득하지 못한 스레드는 lock이 객체에 
+돌아오기 전까지 실행할수 없는 BLOCKED 상태가 된다. 
+BLOCKED 객체는 lock pool(락풀)에서 대기하고 있다가 객체의 lock이 반납되면 
+다시 RUNNABLE 상태로 변경 후 다시 실행될수 있다. 
+
+Lock에 의한 스레드 상태 변화 
+
+RUNNABLE---> RUNNING(Lock 획득실패)
+--->BLOCKED(락풀)---> RUNNABLE(선행 스레드의 Lock 반납)
 
 
 ----------------------------------------------------
 4.3 wait() 아 notify(), notifyAll()
 
+멀티스레드 환경에서 synchronized를 사용하면서 비효율성이라는 문제가 발생한다. 
+현재 계좌의 잔액이 500원인 상황에서 1000원을 출금하는 스레드 t1과 
+100원을 출금하는 스레드 t2, 그리고 5000원을 입금하는 스레드 t3가 있다고 
+생각해보자. 
+
+ex) 
+출금(100원)스레드 t2 ->
+출금(1000원)스레드 t1 -> Account.balance=500 sychronized int withdraw()<-
+입금(5000원)스레드 t3 
+
+t1 스레드가 출금을 위해 sychronized 영역인 withdraw()를 호출하면서 
+lock을 획득하는데 잔액이 부족하므로 어차피 출금할 수 없다. 
+t1이 lock을 반납하지 않은 시점에 t2가 접근해보지만, 이번에는 lock
+이 없기 때문에 잔액이 있더라도 역시 출금할 수가 없다. 
+사실 t1은 t3가 5000원을 입금하기 전까지는 동작해서 lock을 얻어봤자 
+처리할 수 있는 일이 없는데 t2의 작업까지 방해하는 비효율적인 시스템 
+인 것이다. 
+이 문제는 wait()와 notify() 또는 notifyAll() 메서드를 통해 
+보완할수 있다. 
+
+스레드 비효율성 개선을 위한 Object의 메서드 
+
+메서드 명 : 선언부와설명
+
+wait() : public final void wait() throws InterrupedException
+다른 스레드가 notify(), notifyAll()을 호출하기 전까지 현재 
+스레드를 WAITING 상태로 유지한다. 
+
+public final native void wait(long timeout) throws InterrupedException
+다른 스레드가 notify(), notifyAll()을 호출하거나 timeout 시간이 
+지나기 이전까지 스레드를 WAITING 상태로 유지한다. 
+
+notify() : public final native void notify()
+이 객체의 락이 필요한 스레드 하나를 WAITING 상태에서 RUNNABLE로 변경 
+한다. 
+
+notifyAll() : public final native void notifyAll()
+이 객체의 락이 필요한 모든 스레드를 WAITING 상태에서 RUNNABLE로 변경 
+한다. 
+
+이 메서드들은 모두 Object 클래스에 선언되어 있으므로 모든 객체가 
+사용할 수 있다. 메서드 호출 시 주의점은 wait() 메서드는 반드시 
+synchronized 영역에서 호출되어야 하며 notify() 나 notifyAll()은 
+객체의 락을 소유한 스레드가 호출해야 한다. 그렇지 않으면 
+IllegalMonitorStateException 이 발생한다. 
+
+스레드가 공유 객체의 lock을 가진 상태에서 wait() 메서드를 호출하면 
+lock을 반납하고 대기 풀에서 WAITING 상태로 대기한다. 이후 다른 
+스레드가 이 객체의 notify() 또는 notifyAll() 메서드를 호출하면 wait()
+를 호출하고 대기 풀로 이동했던 스레드가 다시 RUNNABLE로 이동한다. 
+이 두 메서드의 차이는 notify() 는 단 하나의 임의의 스레드를 
+RUNNABLE 로 이동시키는 반면 notifyAll()은 모든 스레드를 RUNNABLE로 
+이동 시킨다. 
+
+wait() - notify()를 적용해서 시스템을 적용해보자. t1은 잔액이 
+없다면 빈번히 lock을 얻고 withdraw()를 호출할 필요가 없다. 
+이때 wait() 메서드를 사용한다. wait()를 호출한 스레드 t1은 
+WAITING으로 상태가 바뀌어 대기 풀에서 대기한다. 
+이제 t2는 방해자가 없으므로 잔고 범위 내에서 자유롭게 출금할 수 
+있다. t3가 입금해서 비로소 t1의 출금이 가능해진 상황에서 t3는 
+notify() 또는 notifyAll() 을 호출한다. 그 결과 t1은 RUNNABLE로 
+다시 상태를 변경하고 실행될 수 있게 된다. 
+
+기존의 Banking 시스템은 잔액이 부족해도 계속해서 인출을 시도한다. 
+때문에 비효율적으로 동작하는데 이를 개선해보자. 
+
+먼저 Account를 살펴보자.
+
+ex)
+package ch14.banking;
+
+public class NotiAccount extends Account {
+
+	public NotiAccount(int balance) {
+		super(balance);
+	}
+
+	@Override
+	public synchronized int withdraw(int money) {
+		String threadName = Thread.currentThread().getName();
+		if (balance >= money) {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			balance -= money;
+			System.out.println(threadName + ": 출금, 잔액: " + balance);
+		} else {
+			System.out.println(threadName+": 잔액 부족 출금 불가로 wait 호출");
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		return balance;
+	}
+
+	@Override
+	public synchronized int deposit(int money) {
+		String threadName = Thread.currentThread().getName();
+		balance += money;
+		this.notifyAll();
+		System.out.println(threadName + ": 입금, 잔액: " + balance);
+		return balance;
+	}
+}
+//
+잔액 부족시 account 객체의 wait() 메서드를 호출한다. 
+이 코드를 실행한 스레드는 lock을 반납하고 상태가 WAITING
+으로 변경된다. 
+
+입금 후 account 객체에 대한 wait() 메서드를 호출한 스레드들을 
+깨우기 위해 notifyAll() 메서드를 호출한다. 
+
+다음으로 입금을 처리할 DepositThread이다. 
+이 스레드는 5초 후 money를 Account에 입금하는 역할이다. 
+
+ex2)
+package ch14.banking;
+
+public class DepositThread extends Thread {
+	Account account;
+	int money;
+
+	public DepositThread(String name, Account account, int money) {
+		super(name);
+		this.account = account;
+		this.money = money;
+	}
+
+	public void run() {
+		try {
+			Thread.sleep(1000 * 5);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		account.deposit(money);
+	}
+}
+//
+5초간 스레드는 WAITING 상태에 있다가 account에 money를 입금 
+처리한다. 
+
+마지막으로 클라이언트 코드를 살펴보자. 
+
+ex3)
+package ch14.banking;
+
+public class BankingClient3 {
+	public static void main(String[] args) {
+		Account account = new NotiAccount(5000);
+		WithdrawThread iBanking = new WithdrawThread("인터넷뱅킹", account, 1000);
+		WithdrawThread mBanking = new WithdrawThread("모바일뱅킹", account, 1000);
+		DepositThread tBanking = new DepositThread("텔레뱅킹", account, 10000);
+		iBanking.start();
+		mBanking.start();
+		tBanking.start();
+	}
+}
+//
+인터넷뱅킹: 출금, 잔액: 4000
+모바일뱅킹: 출금, 잔액: 3000
+인터넷뱅킹: 출금, 잔액: 2000
+모바일뱅킹: 출금, 잔액: 1000
+인터넷뱅킹: 출금, 잔액: 0
+모바일뱅킹: 잔액 부족 출금 불가로 wait 호출
+인터넷뱅킹: 잔액 부족 출금 불가로 wait 호출
+텔레뱅킹: 입금, 잔액: 10000
+모바일뱅킹: 출금, 잔액: 9000
+모바일뱅킹: 출금, 잔액: 8000
+모바일뱅킹: 출금, 잔액: 7000
+인터넷뱅킹: 출금, 잔액: 6000
+인터넷뱅킹: 출금, 잔액: 5000
+
+WithdrawThread 두 개와 DepositThread 하나를 생성하고 , 각각의 
+start()메서드를 호출한다. 
+
+출력 결과를 살펴보면 잔액이 부족한 시점에서 WithdrawThread는 불필요한 
+출금을 시도하지 않고 WAITING 상태로 기다린다. DepositThread인 텔레뱅킹이
+입금하고 notifyAll()을 수행하면 다시 RUNNABLE에서 동작을 재개한다. 
+
 ----------------------------------------------------
 4.4 멀티스레드 와 컬렉션
+
+멀티스레드와 컬렉션에 대해서 다시 한번 정리해보자. 멀티스레드 환경에서 
+안전하다는 것은 메서드가 sychronized되어 있어서 한번에 하나의 스레드만 
+사용 가능하다는 말이고 따라서 성능 문제가 발생할수 있다. 
+다음 예는 Vector 와 ArrayList에 두개의 스레드가 데이터를 추가하는 예이다. 
+
+ex)
+package ch14.collection;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Vector;
+
+public class ThreadSafeTest {
+	static DecimalFormat df = new DecimalFormat("#,###ns");
+
+	public static void test(List<Integer> list) throws InterruptedException {
+		long start = System.nanoTime();
+		Runnable r = () -> {
+			try {
+				for (int i = 0; i < 100; i++) {
+					list.add(i);
+				}
+			} catch (Exception e) {
+				String threadName = Thread.currentThread().getName();
+				String exceptionInfo = e.getClass().getName() + " : " + e.getMessage();
+				System.out.println(threadName + " : " + exceptionInfo);
+			}
+		};
+		Thread t1 = new Thread(r, "t1");
+		t1.start();
+		Thread t2 = new Thread(r, "t2");
+		t2.start();
+		t1.join();
+		t2.join();
+		String elapsed = df.format(System.nanoTime() - start);
+		System.out.println(list.getClass().getName() + ":" + list.size() + "개, 시간:" + elapsed);
+	}
+
+	public static void main(String[] args) throws InterruptedException {
+		test(new Vector<Integer>());
+		test(new ArrayList<Integer>());
+		//test(Collections.synchronizedList(new ArrayList<>()));
+	}
+}
+//예외가 발생하지 않았지만 문제 상황
+java.util.Vector:200개, 시간:1,192,700ns
+java.util.ArrayList:170개, 시간:538,000ns
+
+//아주 운 좋은 경우
+java.util.Vector:200개, 시간:20,134,000ns
+java.util.ArrayList:200개, 시간:1,427,500ns
+
+//대부분 예외가 발생하는 경우 
+java.util.Vector:200개, 시간:1,258,500ns
+t1 : java.lang.ArrayIndexOutOfBoundsException : Index 16 out of bounds for length 15
+java.util.ArrayList:110개, 시간:651,400ns
+
+파라미터로 List<Integer> 타입의 객체를 받는다. 
+
+람다식을 이용해 Runnable 객체를 생성한다. run() 내부에서는 파라미터로 
+받은 list를 사용한다. 이 람다식은 여러 스레드에서 사용되므로 list는 
+스레드들의 공유 데이터가 된다. 
+
+r을 이용해서 두개의 스레드를 생성하고 동작시킨다. 
+
+join()을 이용해 두 스레드의 동작이 모두 끝나면 스레드 이름과 list에 
+담긴 데이터 개수, 소요 시간을 출력한다. 
+
+test()를 호출하면서 Vector아 ArrayList를 넘긴다. 
+
+소스는 어렵지 않다. 하지만 스레드로 동작하다 보니 결과가 매우 
+다양하다. 아주 운이 좋은 경우 두 스레드는 문제 없이 List에 데이터를 
+담는다. 하지만 그 결과 Vector는 ArrayList보다  7배 이상 시간이 소요된다. 
+synchronized의 영향으로 멀티스레드로서의 장점을 못 살리기 때문이다. 
+
+두번째 출력 결과는 예외는 발생하지 않았지만 ArrayList의 결과는 오류이다. 
+데이터는 200개가 있어야 하지만 20개의 데이터는 같은 자리에 추가 되었다. 
+이것은 sychronized가 없는 결과로 사실 첫 번째 경우보다 더 문제다. 
+
+대부분은 세 번째 경우처럼 ArrayIndexOutOfBoundsException 이 발생한다. 
+이것은 ArrayList의 add() 메서드가 크기를 늘리는 부분과 데이터를 넣는 부분으로 
+구성되는데 synchronized가 없는 상태에서 호출되므로 t1이 크기를 늘리러 가서 
+아직 늘리지 못한 상황에서 t2가 새로운 자리에 값을 넣기 때문에 발생한다. 
+
+ex)
+public boolean add(E e) {
+ensureCapacityInternal(size + 1); // Increments modCount!!!
+elementData[size++] = e;
+return true;
+}
+
+멀티스레드 환경에서 안전한 컬렉션을 사용하기 위해서는 Collections의 
+synchronizedXXX 계열의 메서드를 사용한다. 
+
+멀티스레드 환경을 위한 Collections의 메서드 
+
+메서드 명 : 선언부와설명
+
+synchronizedCollection() : public static <T> Collection<T>
+sychronizedCollection(Collection<T> c)
+c를 이용해 SynchronizedCollection 를 생성하고 리턴한다. 
+
+synchronizedList() : public static <T> List<T> synchronizedList(List<T> list)
+list를 이용해 SynchronizedList 또는 SynchronizedRandomAccessList
+를 생성하고 리턴한다. 
+
+sychronizedSet() : public static <T> Set <T> synchronizedSet(Set<T> s)
+s를 이용해 SynchronizedSed를 생성하고 리턴한다. 
+
+synchronizedMap() : public static <K, V> Map<K,V>
+sychronizedMap(Map<K,V> m)
+m을 이용해 SynchronizedMap를 생성하고 리턴한다.
+
+위 메서드들은 이외에도 같은 패턴으로 synchronizedNavigableMap(),
+sychronizedNavigableSet(), sychronizedSortedMap(),sychronizedSet()
+이 제공된다. 
+
+사용법은 평소 사용하던 컬렉션을 sychronizedXXX() 메서드의 파라미터로 
+넣으면된다. 위 예에서 ArrayList를 바로 test()에 넣는 대신 
+Collection.sychronizedList(new ArrayList<>())로 변경해보자. 
+
+ex)
+public static void main(String[] args) throws InterrupedException {
+test(new Vector<Integer>());
+test(Collections.synchronizedList(new ArrayList<>()));
+}
+
+//
+java.util.Vector:200개, 시간:1,228,400ns
+java.util.Collections$SynchronizedRandomAccessList:200개, 시간:453,400ns
+
+실행 결과는 소요 시간은 ArrayList의 장점을 그대로 가지고 있으며 
+데이터도 안전한 것을 확인할수 있다. 
 
 ----------------------------------------------------
 5. 스레드 풀(Thread Pool) 활용 
 
 5.1 스레드 풀의 개념 
 
+구구단의 특정 단을 출력하는 스레드가 있다고 가정해보자. 총 9개의 스레드가 
+생성돼서 짧은 동작을 마친 후 종료될 것이다. 스레드는 한 번 종료되면 재사용 
+할수 없으므로 매번 처음부터 다시 생성 후 RUNNABLE 부터 동작해야 하는데 
+이 과정에서 드는 비용도 만만치 않을 것이다. 
+
+작업이 동시에 진행된다고는 하지만 사실 CPU도 한계가 있기 때문에 동시에 
+아주 많은 작업을 처리하는 것은 무리다. 만약 실제 동시 처리 작업이 5개 
+정도라고 가정한다면 나머지 4개의 스레드는 어차피 RUNNABLE 상태에 있을 
+확률이 높다. 
+
+이럴 때 스레드 풀(Thread Pool) 개념을 이용하면 쓸데없이 스레드가 
+많이 만들어지고 소멸되는 과정을 없앨수 있다. 
+
+스레드 풀은 미리 여러 개의 스레드를 만들어서 pool에 저장해 놓고 사용한다. 
+만약 스레드가 필요한 경우 풀에 있는 스레드 중 하나를 사용하고 작업이 
+끝나면 스레드를 종료시키지 않고 풀에 반납한다. 따라서 스레드 생성과 
+소멸에 드는 비용을 크게 절감할수 있다. 
+
+스레드와 스레드 풀의 차이 
+ex1)
+스레드 [Runnable] : 생성->동작->소멸
+스레드 [Runnable] : 생성->동작->소멸
+스레드 [Runnable] : 생성->동작->소멸
+
+스레드 풀(ExecutorService)
+
+작업 큐
+[Runnable]...[Runnable] [Runnable] -> 작업 할당 -> 스레드 
+스레드 [Runnable] [Runnable] 미리 생성된 스레드들 
+
+스레드 풀에서 처리할 작업(Task)이 생기면 작업 큐에 넣어둔다. 이 
+작업들은 Runnable 타입이다. 큐는 FIFO( First In, First Out) 구조로 
+큐에 작업이 들어오면 미리 생성해 놓은 스레드들이 순서대로 하나씩 
+처리하게 된다. 
+자바에서는 스레드 풀을 위해 java.util.concurrent 패키지에 ExecutorService
+인터페이스와 여러 클래스들을 제공한다. 
+
+자바 스레드 풀의 상속 관계 
+
+ThreadPoolExecutor->AbstractExecutorService->ExecutorService->Executor 
+
 ----------------------------------------------------
 5.2 스레드 풀의 사용 
+
+스레드 풀을 만들 때는 기본적으로 풀에 만들어 놓을 스레드의 개수를 정할수 있다. 
+이것을 초기 스레드 개수라고 한다. 작업이 들어오면 스레드들에게 작업을 
+할당하다가 할당할 스레드가 없어지면 최대 스레드 개수까지 추가로 생성한다. 
+작업이 끝난 스레드들에 일정 시간(스레드 유지 시간) 이내에 새로운 작업이 
+할당되지 않으면 최소 개수(코어 스레드 개수)를 남겨두고 모두 제거된다. 
+
+스레드 풀을 생성할 때는 일반적으로 Executors 클래스에서 제공하는 팩토리 
+메서드를 사용한다. 
+
+스레드 풀 생성을 위한 Executors 의 팩토리 메서드 
+
+메서드명 : 선언부와설명
+
+newCachedThreadPool() : public static ExecutorService newCachedThreadPool()
+처음 0개의 스레드에서 시작해서 Integer.MAX_VALUE 개까지 
+스레드를 생성한다. 코어 스레드 수는 0이다. 
+
+newFixedThreadPool() : public static ExecutorService
+ newFixedThreadPool(int n Threads)
+처음 0개의 스레드에서 시작해서 nThread 까지 
+스레드를 생성한다. 코어 스레드 개수도 nThread 이다. 
+
+이 메서드들은 내부적으로 ThreadPoolExecutor 를 생성해서 스레드 풀을 생성한다. 
+
+ex)
+public static ExecutorService newFixedThreadPool(int nThread){
+return new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS,
+new LinkedBlockingQueue<Runnable>());
+}
+
+따라서 위 두 메서드가 제공하는 조건이 마음에 들지 않으면 직접 
+Thread Pool Executor() 생성자를 호출할수도 있다. 
+
+ThreadPoolExecutor의 생성자 
+
+메서드명 : 선언부와설명
+
+ThreadPoolExecutor() : public ThreadPoolExecutor(int corePoolSize,
+int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable>
+workQueue)
+최대 maximumPoolSize까지 스레드를 생성할 수 있는 스레드 풀을 생성한다. 
+unit 기준으로 keepAliveTime 이 지난 thread들은 corePoolSize까지만 
+남기고 제거한다. 스레드에서 처리할 작업은 workQueue에서 관리한다. 
+
+다음 코드는 ThreadPoolExecutor 를 통해서 직접 스레드 풀을 생성하는 예이다. 
+
+ExecutorService es = new ThreadPoolExecutor(10, //코어 스레드 개수 
+100, // 최대 스레드 개수 
+120, // 최대 대기 시간 
+TimeUnit.SECONDS, // 대기 시간 측정 단위 
+new SynchronousQueue<Runnable>() // 작업 큐
+)
+
+(2)작업 생성 
+스레드 풀에서 처리할 작업은 Runnable 또는 Callable 타입이다. 
+이 둘은 모두 인터페이스로 스레드 동작 후 리턴할 값이 없을 경우는 
+Runnable,  리턴할 값이 있을 경우는 Callable을 사용한다. 
+Callable을 사용하기 위해서는 call() 메서드를 오버라이드하면 된다. 
+
+다음은 java.util.concurrent.Callable 인터페이스이다. 
+
+ex)
+@FunctionalInterface
+public interface Callable<V> {
+V call() throws Exception;
+}
+
+Runnable과 Callable 모두 함수형 인터페이스로 람다식을 이용해서 
+작성할 수 있다. 
+
+(3)작업 처리 요청 
+작업을 생성했다면 스레드 풀의 작업 풀에 작업을 넣어서 실행시킬 차례다. 
+다음은 작업 처리를 요청하는 메서드들이다. 
+
+작업 처리를 위한 ExecutorService의 메서드 
+
+메서드 명 : 선언부와설명
+
+submit() : <T> Future<T> submit(Callable<T> task)
+task 를 작업 큐에 등록한다. 작업 처리 결과는 Future<T>를 통해 얻을수 있다. 
+
+<T> Future<T> submit(Runnable task, T result)
+task 를 작업 큐에 등록한다. result는 작업 처리 결과인 Future<T>의 
+타입 파라미터로 사용된다. 
+Future<?> submit(Runnable task)
+task를 작업 큐에 등록한다. 작업 처리 결과는 Future<?>를 통해 얻을 수 있다. 
+
+execute() : void execute(Runnable command)
+command를 작업 큐에 등록한다. 
+
+다음은 ExecutorService를 통해 Callable 타입의 작업을 처리하는 예이다. 
+ExecutorService es = ...;
+Callable callable = () -> {
+// do something
+return "callable 작업 종료";
+};
+Future<String> future = es.submit(callable);
+
+(4)작업 완료 정보의 활용 
+Callable의 작업 결과는 submit() 의 리턴 타입인 Future를 통해 확인할 수 있다. 
+Future에 선언된 get() 메서드는 Callable 의 call() 에서 리턴한 값을 
+리턴한다. 
+
+Future의 주요 메서드 
+
+메서드 명 : 선언부와 설명 
+
+get() : V get() throws InterrupedException, ExecutionException 
+작업이 완료될 까지 블로킹 되었다가 처리 결과인 V를 리턴한다. 
+
+cancel() : boolean cancel(boolean mayInterruptIfRunning)
+작업 처리가 진행중일 경우 취소 시킨다. 
+
+isCancelled() : boolean isCancelled() 
+작업이 취소 되었는지 여부를 리턴한다. 
+
+isDone() : boolean isDone()
+작업이 완료되었는지 여부를 리턴한다. 
+
+Future의 메서드를 사용할 때 주의할 점은 submit()을 호출하자마자 
+Future가 리턴되지만, 이 시점은 아직 Callable 작업이 종료되지 않은 
+시점일 수 있다. 작업이 종료되지도 않았는데 Future의 get()에서 
+결과를 리턴받을 수 있을까?
+
+Future를 지연 완료 객체(Pending Completion Object)라고 하는데 이 객체를 
+활용할 수 있는 시점은 리턴된 시점이 아니라 작업이 완료된 시점이기 때문이다. 
+따라서 Future의 get() 메서드는 스레드 작업이 완전히 끝나기 전까지는 실행하는 
+코드를 블로킹 시킨다. 이 메서드를 호출하기 위해서는 새로운 스레드에서 
+처리해야 한다. 그렇지 않으면 기껏 스레드 풀을 통해 진행하려던 작업이 
+순차 작업으로 처리될 수도 있다. 
+
+ex)
+Future<String> myFuture = es.submit(callable);
+new Thread( ()->{
+try{
+System.out.println(myFeature.get());
+}catch(Exception e) {
+e.printStackTrace();
+}
+}).start();
+
+(5) 스레드 풀 종료 
+스레드 풀은 데몬 스레드가 아니므로 명시적으로 종료시킬 필요가 있다. 
+스레드 풀을 종료시키기 위해서는 ExecutorService의 메서드들을 사용한다. 
+
+종료와 관련된 ExecutorService의 메서드들 
+
+메서드명 : 선언부와 설명 
+
+shutdown() : void shutdown()
+현재 진행중인 작업과 작업 큐의 작업이 모두 끝나면 스레드 풀을 종료한다. 
+가장 안정적인 종료 절차이다. 
+
+shutdownNow() : List<Runnable> shutdownNow()
+현재 진행중인 작업을 interrupt 시켜버리고 스레드 풀을 즉시 종료한다. 
+이때 작업 큐에 남은 작업의 목록을 리턴한다. 불안정한 상태의 종료가 
+발생할 수 있다. 
+
+awaitTermination() : boolean awaitTermination(long timeout, TimeUnit unit)
+throws InterrupedException
+shutdown()을 호출하고 timeout 이내에 모든 작업이 종료되면 true 를
+리턴하고 그렇지 않은 경우 스레드들을 interrupt 시킨 후 false를 리턴한다. 
+
+isShutdown() boolean isShutdown()
+스레드 풀이 종료 단계에 있는지 리턴한다. 
+
+isTerminated() : boolean isTerminated()
+스레드 풀의 모든 스레드들이 다 종료돼서 안전히 소멸됐는지 리턴한다. 
+
+이제까지 설명한 내용을 바탕으로 스레드 풀을 통해 구구단을 2차원 배열에 
+저장해보자. 
+
+ex)
+
+package ch14.pool;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class ThreadPoolGuguTest {
+	private static int[][] gugudan = new int[9][9];
+	private static int dans = 0;
+	public static void main(String[] args) throws InterruptedException, ExecutionException {
+		int processCnt = Runtime.getRuntime().availableProcessors();
+		System.out.println("VM에서 운용 가능한 프로세서 개수: " + processCnt);
+		ExecutorService es = Executors.newFixedThreadPool(processCnt);
+		System.out.println("작업 시작 전: " + es);
+
+		Callable<String> callable = () -> {
+			int dan = ++dans;
+			for (int i = 1; i < 10; i++) {
+				gugudan[dan - 1][i - 1] = dan * i;
+			}
+			return dan + " 작업 완료, " + Thread.currentThread().getName();
+		};
+		for (int i = 0; i < 9; i++) {
+			Future<String> guguFuture = es.submit(callable);
+			new Thread(() -> {
+				try {
+					System.out.println(guguFuture.get());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}).start();
+		}
+
+		Thread.sleep(1000 * 5);
+		System.out.println("작업 종료 후: " + es);
+		for (int[] dans : gugudan) {
+			for (int num : dans) {
+				System.out.print(num + "\t");
+			}
+			System.out.println();
+		}
+		es.shutdown();
+	}
+}
+//
+VM에서 운용 가능한 프로세서 개수: 4
+작업 시작 전: java.util.concurrent.ThreadPoolExecutor@3abfe836
+[Running, pool size = 0, active threads = 0, 
+queued tasks = 0, completed tasks = 0]
+1 작업 완료, pool-1-thread-1
+6 작업 완료, pool-1-thread-1
+4 작업 완료, pool-1-thread-1
+3 작업 완료, pool-1-thread-1
+5 작업 완료, pool-1-thread-1
+2 작업 완료, pool-1-thread-1
+8 작업 완료, pool-1-thread-4
+7 작업 완료, pool-1-thread-2
+9 작업 완료, pool-1-thread-3
+작업 종료 후: java.util.concurrent.ThreadPoolExecutor@3abfe836
+[Running, pool size = 4, active threads = 0, 
+queued tasks = 0, completed tasks = 9]
+1	2	3	4	5	6	7	8	9	
+2	4	6	8	10	12	14	16	18	
+3	6	9	12	15	18	21	24	27	
+4	8	12	16	20	24	28	32	36	
+5	10	15	20	25	30	35	40	45	
+6	12	18	24	30	36	42	48	54	
+7	14	21	28	35	42	49	56	63	
+8	16	24	32	40	48	56	64	72	
+9	18	27	36	45	54	63	72	81	
+
+스레드 풀의 크기를 결정하기 위해서 VM에서 사용 가능한 프로세서의 
+개수를 조회한다. availableProcessors()에서 리턴하는 이 값은 실행환경에 
+따라 다를수 있다. 
+
+newFixedThreadPool()을 이용해서 스레드 풀을 생성하고 출력한다. 
+아직 처리한 작업이 없기 때문에 출력 결과를 살펴보면 pool size등은 
+모두 0이다. 
+
+Callable 타입으로 작업을 생성한다. 작업은 구구단의 특정 단을 출력하는 것이고
+완료 후 종료된 단의 정보와 함께 현재 스레드의 이름을 출력한다. 
+
+반복문에서 submit() 메서드를 이용해 Callable 타입의 작업 9개를 제출한다. 
+submit() 의 return 타입인 Future를 통해 값을 얻기 위해 별도의 스레드를 
+동작시키고 그 내부에서 get()을 호출한다. 
+
+5초후 스레드 풀 정보를 출력하면 풀에는 총 4개의 스레드가 있고 완료된 작업이 
+9개 임을 알수 있다. 
+
+gugudan 안에 모든 내용을 출력해서 값을 확인한다. 
+
+스레드 풀을 종료시킨다. 
 
 
 ===================================
@@ -20212,6 +20959,10 @@ synchronized 키워드 는
 1. I-O 와 스트림 
 
 1.1 스트림의 개념 
+
+
+587 1/53
+
 
 ----------------------------------------------------
 2. 노드 스트림

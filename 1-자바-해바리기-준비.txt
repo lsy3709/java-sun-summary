@@ -22301,16 +22301,644 @@ dis를 이용해 UTF->int -> double 의 순서로 데이터를 읽어서 출력�
 
 616 30/53
 
+DataInputStream 과 DataOutputStream이 기본형과 문자열을 입력/출력하기 
+위한 스트림이라면 객체를 입력/출력할 수 있는 스트림으로는 
+ObjectInputStream과 ObjectOutputStream이 있다. 
+
+(1) 직렬화와 역직렬화 
+메모리상의 객체를 다른 노드에 전송할 때 참조 값을 전송하는 것은 아무런 의미가 
+없다. 애플리케이션이 종료되면 메모리는 다 초기화되기 때문이다. 또한, 객체의 
+메서드나 생성자도 의미 없다. 이들은 객체를 구별하는 요소가 아니기 때문이다. 
+객체 전송에서 필요한 것은 단지 객체가 가진 데이터 즉 멤버 변수들 뿐이다. 
+
+객체의 멤버 변수들을 전송하기 위해서는 연속적인 데이터 형태로 변환해야 
+하는데 이 과정을 객체 직력화(Serialization)라고 한다. ObjectOutputStream은 
+객체를 직렬화 시켜서 노드로 출력한다. 반대로 ObjectInputStream은 직렬화된 
+객체 정보 즉 멤버 변수를 읽어서 다시 객체화시킨다. 이 과정을 역직렬화된 객체 정보 
+즉 멤버 변수를 읽어서 다시 객체화시킨다. 이 과정을 역직렬화(Deserialization)라고 
+한다. 
+
+ex)
+0x100(Person p : 스택)->0x100 (힙 : name:, age: 세로 되어 있네 )
+->직렬화 (name:.. : age : .. 가로로)(반대로는 역직렬화 )
+-> output ->파일 
+파일-> input 
+
+직렬화되기 위한 클래스는 반드시 Serializable 인터페이스를 구현해야 한다. 
+Serializable 인터페이스에는 구현해야 할 메서드는 없다. 단지 
+implements Serializable이 추가되면 충분하다. 
+단 이때 소속 멤버 변수들도 모두 직렬화될 수 있어야 한다. 
+
+다음예에서 Person을 직렬화하기 위해서는 Person의 멤버 타입들인 
+String name 이나 LoginInfo Info 역시 직렬화될 수 있어야한다. 
+String 클래스는 이미 Serializable을 구현하고 있으며 LoginInfo는 
+작성 시 Serializable을 구현해야 한다. 
+
+객체의 멤버 변수 중 외부로 유출되지 말아야 할 내용이 있을 수 있다. 
+예를 들어 주민등록번호 등 민감한 정보가 파일로 저장되는 것은 바람직 하지 
+않다. 이런 멤버 변수에는 transient 키워드를 사용하면 직렬화에서 제외된다. 
+
+ex)
+class Person implements Serializable { // 직렬화 필수 조건 
+private String name;
+private int age;
+
+private transient String ssn; // 직렬화 제외 
+private LoginInfo IInfo;
+}
+
+(2)serialVersionUID 
+직렬화 가능한 클래스에는 static final long 타입의 serialVersionUID 
+멤버 변수를 추가하는 것이 좋다. 이 변수는 클래스 변경 여부를 파악하기 위한 
+키이다. 어느 날 serialVersionUID가 001인 버전의 Person 타입 객체를 직렬화해서 
+파일로 저장한 후 멤버 변수 age를 제거한 002 버전으로 만들었다고 생각해보자. 
+역직렬화가 가능할까? 당연히 age가 없어졌으므로 문제가 될것이다. 
+
+ex) class Person{} : 001 버전 -> 직렬화 , name:.. | age:.. ->output -> 파일 
+파일 -> input : 역직렬화 -> 예외발생 : class Person{} : 002 버전.
+
+역직렬화 과정에서 클래스의 버전 확인에 사용되는 것이 serialVersionUID이다. 
+직렬화 할 때의 serialVersionUID와 역직렬화할 때의 serialVersionUID가 맞지 않으면 
+java.io.InvalidClassException 이 발생한다. 
+
+주의할 점은 직렬화되는 클래스에 serialVersionUID가 설정되지 않았을 경우 
+컴파일러가 자동으로 생성한다는 것이다. 즉 컴파일 할 때마다 serialVersionUID가 
+변경돼서 기존에 직렬화돼서 저장된 내용을 역직렬화해서 사용할수 없게 된다. 
+따라서 직렬화되는 객체에는 serialVersionUID를 설정하기를 권장한다. 
+
+serialVersionUID
+직렬화 대상 객체에 serialVersionUID가 설정되지 않으면 'serial'경고 (warning)가 
+발생한다. 이 경우 이클립스에서는 클래스 이름에 커서를 올리면 serialVersionUID를 
+설정하는 기능을 제공한다. Add default serial version ID는 기본값이 1L 로 
+설정된 serialVersionUID를 추가해주고 Add generated serial version ID는 
+고유한 값을 생성해서 추가한다. 또는 @SupressWarnings로 이 경고를 무시할 수도 있다. 
+
+다음은 직렬화 대상인 Person과 Person이 has-a 관계를 가지는 LoginInfo
+클래스이다. 
+
+ex)
+package ch15.processing.object;
+
+import java.io.Serializable;
+
+public class Person implements Serializable {
+	private static final long serialVersionUID = 3075830113306886480L;// 생성된 UID
+	private String name;
+	private int age;
+	private transient String ssn;
+	private LoginInfo lInfo;
+
+	public Person(String name, int age, String ssn, String userId, String userPass) {
+		this.name = name;
+		this.age = age;
+		this.ssn = ssn;
+		this.lInfo = new LoginInfo(userId, userPass);
+	}
+
+	@Override
+	public String toString() {
+		return "Person [name=" + name + ", age=" + age + ", ssn=" + ssn + ", lInfo=" + lInfo + "]";
+	}
+}
+
+class LoginInfo implements Serializable {
+	private static final long serialVersionUID = 1L; // 기본값 사용
+	private String userId;
+	private transient String userPass;
+
+	public LoginInfo(String userId, String userPass) {
+		super();
+		this.userId = userId;
+		this.userPass = userPass;
+	}
+
+	public String toString() {
+		return "LoginInfo [userId=" + userId + ", userPass=" + userPass + "]";
+	}
+}
+//
+Serializable 인터페이스를 구현한 Person 클래스이다. 
+
+클래스의 버전을 관리하기 위해 serialVersionUID를 설정한다. 
+
+민감한 정보인 ssn은 직렬화에서 제외하기 위해 transient 키워드를 추가한다. 
+
+멤버 변수인 LoginInfo역시 Serializable 인터페이스 의 구현이 필요하다. 
+
+(3) ObjectOutputStream과 ObjectInputStream
+객체 직렬화에 사용되는 ObjectOutputStream의 메서드를 살펴보자. 
+
+ObjectOutputStream의 주요 API 
+
+메서드명 : 선언부와설명
+
+ObjectOutputStream() 
+:public ObjectOutputStream(OutputStream out) throws IOException
+out을 이용해 ObjectOutputStream 객체를 생성한다. 
+
+writeObject()
+:public final void writeObject(Object obj) throws IOException
+obj를 직렬화해서 출력한다. 
+
+defaultWriteObject()
+:public void defaultWriteObject() throws IOException
+객체에서 선언한 non-static, non-transient 멤버 변수를 직렬화해서 출력한다. 
+이 메서드는 직렬화되는 클래스의 writeObject(ObjectOutputStream)
+메서드에서만 호출된다. 
+
+writeP#() 
+:public void writep#(p# val) throws IOException
+val 값을 출력한다. 이 메서드는 직렬화되는 클래스의 writeObject(ObjectOutputStream)
+메서드에서 호출된다. 
+P# : boolean, byte, short, int , long, float, double, char, String 
+P* : Boolean, Byte, Short, Int, Long, Float, Double, Char, UTF를 나타낸다. 
+
+ObjectInputStream의 주요 API 
+ObjectInputStream() 
+:public ObjectInputStream(InputStream in) throws IOException
+in을 이용해 ObjectInputStream 객체를 생성한다. 
+
+readObject()
+:public final Object readObject() throws IOException, ClassNotFoundException
+직렬화된 데이터를 역직렬화해서 Object로 리턴한다. 
+
+defaultReadObject()
+:public void defaultReadObject() throws IOException,ClassNotFoundException
+객체에서 선언한 non-static, non-transient 멤버 변수를 역직렬화한다.
+이 메서드는 역직렬화되는 클래스의 readObject(ObjectInputStream)
+메서드에서만 호출된다. 
+
+readP#() 
+:public P*  readP#() throws IOException
+p 타입의 값을 읽어서 리턴한다. 이 메서드는 역직렬화되는 클래스의 
+readObject(ObjectInputStream) 메서드에서 호출된다.
+메서드에서 호출된다. 
+P# : boolean, byte, short, int , long, float, double, char, String 
+P* : Boolean, Byte, Short, Int, Long, Float, Double, Char, UTF를 나타낸다. 
+
+ex) 
+다음은 Person 클래스를 직렬화해서 파일로 저장하고 다시 역직렬화 과정을 
+거쳐 사용하는 예이다. 
+
+package ch15.processing.object;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+public class ObjectStreamTest {
+
+	public static void main(String[] args) {
+		File target = new File("c:/Temp/objPerson.dat");
+		Person person = new Person("홍길동", 20, "111111-2222222", "hong", "1234");
+		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(target));
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(target));) {
+			//객체 저장
+			oos.writeObject(person);
+			// 객체 로딩
+			Object readed = ois.readObject();
+			if (readed != null && readed instanceof Person) {
+				Person casted = (Person) readed;
+				System.out.println(casted);
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+}
+//Person [name=홍길동, age=20, ssn=null, lInfo=LoginInfo [userId=hong, userPass=null]]
+
+FileInputStream과 FileOutputStream을 노드 스트림으로 하는 
+ObjectInputStream과 ObjectOutputStream을 생성한다. 
+
+ObjectOutputStream의 writeObject()를 이용해서 직렬화된 객체를 파일에 
+저장한다. 
+
+ObjectInputStream의 readObject()를 이용해서 역직렬화 후 객체를 반환한다. 
+
+객체를 Person으로 형변환후 출력한다. 
+
+출력된 내용을 살펴보면 처음 만들었던 객체의 정보를 그대로 확인할수 있다. 
+단 transient 선언된 Person의 ssn이나 LoginInfo의 userPass는 null 인 상태이다 
+
+(4) 상속 관계에서의 객체 직렬화 
+Parent 클래스와 이를 상속받은 Child 클래스가 있을 때 Child 객체의 직렬화에 대해 
+알아보자. 만약, Parent 클래스가 Serializable 인터페이스를 구현하고 있다면 
+자식은 자동으로 직렬화가 가능하기 때문에 모든 Child의 멤버 변수 모두가 직렬화 
+대상이다. 하지만, 조상이 Serializable 인터페이스를 구현하지 않고 자식만 구현한 
+상태라면 자식의 멤버 변수만 직렬화 대상이다. 
+
+조상 클래스를 수정할수 없는 상태라면 자식에서 조상에 대한 직렬화를 직접 처리해야 
+한다. 이를 위해 자식 클래스에 다음과 같이 readObject()와 writeObject() 메서드를 
+만들어야 한다. 
+
+ex)
+private void writeObject(ObjectOutputStream out) throws IOException{
+out.writeP#(부모의 멤버 변수);
+...
+out.defaultWriteObject();
+}
+
+private void readObject(ObjectInputStream in)
+throws IOException, ClassNotFoundException{
+부모의 멤버 변수 = in.readP#();
+...
+in.defaultReadObject();
+}
+메서드의 접근 제한자가 private임을 유의하자. 이 과정에서 
+조상의 멤버 변수를 처리할 때 readP#()와 writeP#()를 사용하는데 
+DataInputStream, DataOutputStream에서의 용법과 동일하다. 
+writeObject()에서는 출력을 처리하는데 writeP#()를 통해서 부모의 멤버들을 
+직렬 처리한다. defaultWriteObject() 클래스 자체에서 선언된 non-static,
+non-transient 멤버들을 직렬화한다. readObject()에서는 입력을 처리하는데 
+readP#()를 통해서 부모의 멤버들을 역직렬화해서 할당한다. 
+defaultReadObject()는 클래스 자체에서 선언된 non-static, non-transient
+멤버들을 역직렬화한다. 이때 readObject()에서 역직렬화하는 순서는 반드시 
+writeObject ()에서 직렬화한 순서와 같아야 한다. 
+
+다음은 Serializable을 구현하지 않은 Parent 를 상속받은 Child 클래스를 직렬화하는 
+예이다. 
+
+ex)
+package ch15.processing.object;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+public class InheritSerializeTest {
+
+	public static void main(String[] args) {
+		File target = new File("c:/Temp/objParent.dat");
+		Child child = new Child("홍길동", 20);
+		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(target));
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(target));) {
+			//객체 저장
+			oos.writeObject(child);
+			// 객체 로딩
+			Object readed = ois.readObject();
+			if (readed != null && readed instanceof Child) {
+				Child casted = (Child) readed;
+				System.out.println(casted);
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+	}
+	static class Parent{
+		protected String name;
+	}
+	static class Child extends Parent implements Serializable{
+		private static final long serialVersionUID = 4261512421193094142L;
+		private int age;
+
+		public Child(String name, int age) {
+			this.name = name;
+			this.age = age;
+		}
+
+		@Override
+		public String toString() {
+			return "Child [age=" + age + ", name=" + name + "]";
+		}
+		
+		private void writeObject(ObjectOutputStream out) throws IOException{
+			out.writeUTF(name);
+			out.defaultWriteObject();
+		}
+		private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
+			name = in.readUTF();
+			in.defaultReadObject();
+		}
+	}
+}
+//
+Child [age=20, name=홍길동]
+
+writeObject() 메서드에서 직접 직렬화 코드를 작성한다. 
+먼저 조상의 멤버인 name을 직렬화하고 defaultWriteObject()를 
+통해 Child에서 선언한 멤버 변수를 직렬화한다. 
+
+readObject() 메서드에서 직접 역직렬화 코드를 작성한다. 이때 순서는 
+writeObject()에서 직렬화한 순서를 그대로 따라야 한다. 따라서 먼저 
+name을 readUTF()로 처리하고 나머지 멤버 변수들을 defaultReadObject()로 
+처리한다. 
+
 ----------------------------------------------------
 4 NIO(New Input Output) 
 
 4.1 NIO 의 특징 
 
+NIO는 JDK 1.4에 처음 등장했으며 자바 7 버전에서 대폭 강화된 I/O 관련 패키지로 
+기존의 I/O를 대체하는 개념이 아니라 다른 특성을 가진 I/O이다. 
+
+기존 I/O와 대비되는 NIO의 차이점을 알아보자. 
+
+입출력 방식 : I/O 는 스트림을 이용한다. 스트림은 단방향으로 입력을 위한 
+스트림과 출력을 위한 스트림이 필요하다. NIO에서는 채널(Channel)을 사용한다. 
+채널은 양방향으로 하나의 채널로 입력과 출력을 모두 처리한다. 
+
+버퍼 방식 : I/O는 기본적으로 버퍼를 제공하지 않는다. 버퍼가 필요하다면 
+Buffered 계열의 보조 스트림을 추가해서 사용해야 한다. NIO 방식에서는 버퍼를 
+기본으로 제공한다. 따라서 모든 데이터는 버퍼를 통해서 가져온다. 
+
+블로킹 방식 : I/O는 언제나 블로킹(blocking)을 유발하므로 스레드가 대기상태로 
+이동한다. 즉 read()나 write() 를 호출할 때 스레드가 블로킹되고 close() 를 호출하면 
+블로킹이 풀린다. 이 과정에서는 다른 블로킹 상태와 달리 interrupt()를 호출해서 
+중단시킬수도 없다. NIO는 블로킹과 넌-블로킹(non-blocking)을 모두 지원한다. 
+블로킹에서 조차 interrupt()를 통해서 중단시킬수 있다. 
+
+결과적으로 정리해보면 NIO는 여러 클라이언트 연결을 넌-블로킹 상태로 
+처리하고 운영체제의 버퍼를 이용함으로써 성능상 장점이 많다. 특히 다수의 
+클라이언트 환경, 짧은 입출력 작업에 적합하다. 하지만 스레드 병렬처리를 
+기본으로 하기 때문에 I/O에 비해 복잡해졌고 대용량 처리, 소수의 클라이언트
+환경에서는 I/O가 오히려 유리하다. 
+
 ----------------------------------------------------
 4.2 Path 와 Files 
 
+I/O가 File 하나로 파일 관련 요소들을 관리하던 것을 NIO에서는 Path와 
+Files 로 분리해서 관리한다. 
+
+(1) java.nio.file.Path 인터페이스
+Path는 파일 또는 디렉터리의 경로를 지정하기 위해서 사용된다. 
+Path를 얻기 위해서는 Paths가 제공하는 정적 메서드인 get()을 이용한다. 
+
+Paths의 메서드 
+
+메서드명 : 선언부와설명
+
+get() : public static Path get(String first, String ... more)
+first와 more로 구성된 Path 객체를 리턴한다. .
+
+public static Path get(URI uri)
+uri에 위치한 Path 객체를 리턴한다. 
+
+다음은 get() 메서드를 이용해 Path 객체를 얻는 예로 모두 하나의 
+파일을 나타낸다. 
+
+ex)
+Path path1 = Paths.get("C:/windows/explorer.exe");
+Path path2 = Paths.get("C:",:indows", "explorer.exe"));
+Path path3 = Paths.get(new URI("file:///C:/windows/explorer.exe"));
+
+Path에는 Path 객체의 기본 정보를 얻는 메서드, 경로 변환과 관련된 메서드, 
+경로 비교와 관련된 메서드가 제공된다. 
+
+다음은 Path 객체의 기본 정보를 얻기위한 메서드들과 사용 예이다. 
+
+Path의 주요 메서드 
+
+getFileName(): Path getFileName()
+부모 경로를 제외한 파일 또는 디렉토리 이름을 갖는 Path를 리턴한다. 
+
+getNameCount() : int getNameCount()
+루트 경로 이후 구분자로 나뉘는 이름의 개수를 리턴한다. 
+예를 들어 C:/windows/explorer.exe 의 경우는 2이다. 
+
+getName() : Path getName(int index)
+특정 인덱스의 이름을 리턴한다. 예를 들어 C:/windows/explorer.exe
+의 경우 getName(0)은 windows 이다. 
+
+subpath(): Path subpath(int beginIndex, int endIndex)
+현재 Path에서 beginIndex 부터 endIndex 까지 만으로 구성된 Path를 
+리턴한다. 
+
+getParent() : Path getParent()
+상위 Path 객체를 리턴한다. 
+
+getRoot() : Path getRoot()
+최상위 Path 객체를 리턴한다. 
+
+toAbsolutePath() : Path toAbsolutePath()
+상대경로의 Path를 절대경로의 Path로 리턴한다. 
+
+normalize() : Path normalize()
+경로명 중간에 불필요한 상대경로로 표현을 제거하고 리턴한다. 
+
+toFile() : File toFile()
+Path를 java.io.File 객체로 리턴한다. 
+
+toUri() : URI toUri()
+file://로 시작하는 URI 형태로 리턴한다. 
+
+ex)
+package ch15.nio.path;
+
+import java.io.File;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+public class PathTest {
+
+	public static void main(String[] args) throws URISyntaxException {
+		Path path1 = Paths.get("c:/windows/explorer.exe");
+		System.out.printf("파일명: " + path1.getFileName());
+		System.out.println();
+		System.out.println("이름의 개수: " + path1.getNameCount());
+		System.out.println("0번째 이름의 개수: " + path1.getName(0));
+		System.out.println("0~2의 패스: " + path1.subpath(0, 2));
+		System.out.println("상위 경로: " + path1.getParent());
+		System.out.println("루트 경로: " + path1.getRoot());
+
+		Path relative = Paths.get("./src");
+		System.out.println("절대 경로로: " + relative.toAbsolutePath());
+		System.out.println("상대 경로 표시 삭제: " + relative.normalize().toAbsolutePath());
+		// java.io 패키지로의 연결
+		File file = relative.toFile();
+		System.out.println("URI 표현: " + relative.toUri());
+	}
+}
+//
+파일명: explorer.exe
+이름의 개수: 2
+0번째 이름의 개수: windows
+0~2의 패스: windows\explorer.exe
+상위 경로: c:\windows
+루트 경로: c:\
+절대 경로로: C:\Users\itwill-cisco1205\git\java-kame2\.\src
+상대 경로 표시 삭제: C:\Users\itwill-cisco1205\git\java-kame2\src
+URI 표현: file:///C:/Users/itwill-cisco1205/git/java-kame2/./src/
+
+(2) java.nio.files.Files 클래스 
+
+Files 클래스는 파일과 디렉토리의 생성및 속성을 읽는 정적 메서드를 제공한다. 
+대부분 java.io.File이 가지고 있는 메서드들과 유사한데 파일을 복사하는 
+copy()나 파일과 연결된 스트림을 리턴하는 newXXX() 계열의 메서드는 
+상당히 편리하다. 
+
+Files 의 주요 메서드 
+
+메서드 명 : 선언부와설명
+
+newInputStream() 
+:public static InpuStream newInputStream(Path path, OpenOption...options)
+throws IOException
+path 와 연결된 InputStream을 리턴한다. 
+
+getNameCount()
+public static OutputStream newOutputStream(
+Path path, OpenOption ... options) throws IOException
+)
+path와 연결된 OutputStream을 리턴한다. 
+
+newBufferedReader() 
+:public static BufferedReader newBufferedReader(Path path, OpenOption...options)
+throws IOException
+path와 연결된 BufferedReader를 리턴한다. 
+
+newBufferedWriter() 
+:public static BufferedWriter newBufferedWriter(Path path, OpenOption...options)
+throws IOException
+path와 연결된 BufferedWriter를 리턴한다. 
+
+newDirectoryStream() 
+public static DirectoryStream<Path> newDirectoryStream(Path dir)
+throws IOException
+path와 연결된 DirectoryStream을 리턴한다. 
+
+SeekableByteChannel() 
+:public static SeekableByteChannel newByteChannel(
+Path path, OpenOption... options) throws IOException)
+path 와 연결된 SeekableByteChannel을 리턴한다. 
+
+createFile()
+public static Path createFile(Path path, FileAttribute<?>...attrs) throws IOException
+path 위치에 빈 파일을 생성한다. 
+
+createDirectory()
+:public static Path createDirectory( 
+Path dir, FileAttribute<?> ... attrs)throws IOException
+dir 위치에 디렉토리를 생성한다. 
+
+delete()
+: public static void delete(Path path) throws IOException
+path 위치의 디렉토리 또는 파일을 삭제한다. 
+
+copy() 
+: public static Path copy(Path source, Path target, CopyOption... options)
+throws IOException
+source를 target 으로 복사한다. 
+
+move() 
+: public static Path move(Path source, Path target, CopyOption...options)
+throws IOException
+source 를 target으로 이동 시킨다. 
+
+readAllLines() 
+: public static List<String>readAllLines(Path path) throws IOException
+path 의 모든 행을 읽어서 List<String> 으로 리턴한다. 
+
+위에 소개한 메서드들 이외에도 파일의 정보를 확인하는 다양한 메서드들이 
+제공된다. 
+
+ex) 
+package ch15.nio.path;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Date;
+import java.util.List;
+
+public class FilesTest {
+	public static void main(String[] args) throws IOException {
+		FilesTest ft = new FilesTest();
+		ft.copyTest();
+		ft.dirInfo();
+		ft.readTextFile();
+		ft.deleteTest();
+	}
+	
+	public void copyTest() throws IOException {
+		Path src = Paths.get("c:/windows/explorer.exe");
+		Path target = Paths.get("c:/Temp/files_copy_explorer.exe");
+		if (Files.isReadable(src)) {
+			Files.copy(src, target, StandardCopyOption.REPLACE_EXISTING);
+			System.out.println("복사 완료!!");
+		}
+	}
+	
+	public void dirInfo() throws IOException {
+		Path target = Paths.get(".");
+		DirectoryStream<Path> directoryStream = Files.newDirectoryStream(target);
+		for(Path path: directoryStream) {
+			Date time = new Date( Files.getLastModifiedTime(path).toMillis());
+			String name = path.getFileName().toString();
+			long length = Files.size(path);
+			if (Files.isDirectory(path)) {
+				name = "[" + name + "]";
+			}
+			System.out.printf("%-20s\t%tF %<tT\t%s%n", name, time, length);
+		}
+	}
+	
+	public void readTextFile() throws IOException{
+		Path target = Paths.get("./pom.xml");
+		BufferedReader reader = Files.newBufferedReader(target);
+		String line = null;
+		while((line=reader.readLine())!=null) {
+			System.out.println(line);
+		}
+		
+		List<String> lines = Files.readAllLines(target);
+		for(String line2: lines) {
+			System.out.println(line2);
+		}
+	}
+	
+	public void deleteTest() throws IOException{
+		Path target = Paths.get("c:/Temp/files_copy_explorer.exe");
+		boolean result = Files.deleteIfExists(target);
+		String resultStr = result?"삭제 성공":"삭제 실패";
+		System.out.println(resultStr);
+	}
+}
+//
+복사 완료!!
+.classpath          	2019-03-12 14:09:37	644
+[.git]              	2019-03-12 14:09:38	4096
+.gitignore          	2019-03-12 14:09:36	893
+.project            	2019-03-12 14:09:37	386
+[.settings]         	2019-03-12 14:09:36	0
+config.properties   	2019-05-02 17:58:34	103
+mylog_0.log         	2019-03-25 09:19:49	1593
+pom.xml             	2019-05-13 17:45:49	0
+[src]               	2019-03-28 11:02:50	4096
+[target]            	2019-03-12 14:09:35	0
+삭제 성공
+
+Files.copy()를 이용해 별도의 스트림을 생성하지 않고도 간단히 파일을 복사 
+할수 있다. CopyOption의 구현체인 StandardCopyOption 중 REPLACE_EXISTING
+을 이용하면 기존 파일이 있더라도 덮어쓴다. 
+
+DirectoryStream<>는 디렉토리 내부 요소들을 사용할 때 유용하다. 
+구현 내용은 ch15.node.file.UseFileTest.java를 Files 기반으로 변경한 것이므로 
+자세한 설명은 생략한다. 
+
+텍스트 파일을 읽는 두 가지 방법을 소개한다. 처음 방식은 newBufferedReader()
+를 이용해서 기존의 I/O의 BufferedReader를 얻은 후 읽는 방법이다. 
+두번째 방법은 간단한 파일 읽기를 위해 readAllLines()를 이용한 예이다. 
+
+파일을 삭제할 때는 deleteIfExists() 나 delete()를 사용할수 있다. 
+
 ----------------------------------------------------
 4.3 Buffer 
+
+629 43/53
 
 ----------------------------------------------------
 4.4 FileChannel 

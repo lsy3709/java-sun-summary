@@ -23208,9 +23208,94 @@ ByteBuffer로 변환한 뒤에 처리해야 한다.
 
 635 49/53
 
+int [] 데이터를 채널을 통해 다른 곳으로 전달하는 경우를 생각해보자. 
+int []는 IntBuffer 가 가장 잘 처리 할수 있다. 하지만 채널을 통해서 
+전달될 수 없기 때문에 ByteBuffer로 변경해야 한다. 이 때 
+int는 4byte에 해당하기 때문에 ByteBuffer의 용량(capacity)은 
+IntBuffer의 4배가 필요하다. 따라서 IntBuffer의 capacity * 4의 
+capacity를 가진 ByteBuffer를 만들고 데이터를 putInt() 메서드를 
+이용해서 데이터를 추가한다. 만약 데이터가 int 가 아니라면 각 타입에 
+맞도록 ByteBuffer의 capacity나 putP#() 메서드를 변경해서 사용하면 된다. 
+
+ex)
+int [] src = {1024, 2048, 3072};
+IntBuffer iBuffer = IntBuffer.wrap(src);
+ByteBuffer bBuffer = ByteBuffer.allocate(iBuffer.capacity()*4);
+for(int i=0; i < iBuffer.capacity(); i++){
+bBuffer.putInt(iBuffer.get(i);
+}
+
+다시 채널을 통해 데이터를 받은 곳에서 ByteBuffer의 asP#Buffer()
+메서드를 이용해 원하는 형태의 버퍼로 변경 후 사용한다. 
+
+ex)
+bBuffer.rewind();
+IntBuffer iBuffer2 = bBuffer.asIntBuffer();
+int [] target = new int[iBuffer2.capacity()];
+iBuffer.get(target);
+System.out.println("결과 : "+Arrays.toString(target)); 
+// 결과 : [1024, 2048, 3072]
+
+위와 같이 버퍼 변환을 위해서는 상당히 번거로운 과정을 거쳐야 한다. 
+가장 빈번한 문자열 즉 CharBuffer와의 변환에는 좀 더 편리한 방법이 있다. 
+java.nio.charset.Charset 클래스의 encode()와 decode() 메서드는 
+ByteBuffer와 CharBuffer 간 손쉬운 변환 기능이 제공한다. 
+
+Charset 을 이용한 ByteBuffer와 CharBuffer 간의 변환 
+
+메서드 명 : 선언부와설명
+
+forName() : public static Charset forName(String charsetName)
+charsetName에 해당하는 Charset 객체를 리턴한다. 
+
+encode() : public final ByteBuffer encode(String str)
+str 데이터를 이용해 ByteBuffer를 생성하고 리턴한다. 
+
+public final ByteBuffer encode(CharBuffer cb)
+cb를 ByteBuffer로 변환 후 리턴한다. 
+
+decode() : public final CharBuffer decode(ByteBuffer bb)
+bb를 CharBuffer로 변환 후 리턴한다. 
+
+ex)
+String src = "안녕 Java World";
+Charset charset = Charset.forName("utf-8");
+ByteBuffer bBuffer = charset.encode(src);
+CharBuffer cBuffer = charset.decode(bBuffer);
+System.out.println(new String(cBuffer.array()));
+// "안녕 Java World"
+
 ----------------------------------------------------
 4.4 FileChannel 
 
+Channel 의 예로 가장 많이 사용되는 FileChannel을 살펴보자. 
+java.nio.channel.FileChannel은 파일 읽기와 파일 쓰는데 사용되는 채널이다. 
+FileChannel은 동기화 처리되어 있으므로 멀티스레드 환경에서 안전하다. 
+스트림과 달리 read()와 write()가 같이 있는 점이 큰 차이점이다. 
+
+FileChannel의 주요 메서드 
+
+메서드 명 : 선언부와설명
+
+open() : public static FileChannel open(
+Path path, OpenOption... options) throws IOException)
+path에 연결된 FileChannel의 객체를 생성한다. 
+
+close() : public final void close() throws IOException
+FileChannel을 닫는다. 
+
+read() : public abstract int read(ByteBuffer dst) throws IOException
+FileChannel을 통해 읽은 파일의 내용을 dst에 저장한다. 
+
+public final long read(ByteBuffer[] dsts) throws IOException
+FileChannel을 통해 읽은 파일의 내용을 dsts에 저장한다. 
+
+public abstract long read(
+ByteBuffer[] dsts, int offset, int length)throws IOException
+FileChannel을 통해 읽은 파일의 내용을 dsts의 offset부터 
+length -1 까지에 저장한다. 
+
+636 50/53
 
 ===================================
 [자바 해바라기 정리] 16 스트림 API

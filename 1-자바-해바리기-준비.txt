@@ -22974,6 +22974,240 @@ DoubleBuffer가 제공된다.
 
 630 44/53
 
+Buffer를 만들 때는 각 Buffer 클래스의 정적 메서드를 이용해서 생성한다. 
+
+allocate() : 모든 타입의 버퍼 클래스들은 allocate() 메서드가 있다. 
+이 메서드는 넌-다이렉트 버퍼를 생성한다. 파라미터로 버퍼에 저장할 
+데이터의 개수를 지정한다. 다음은 1024*1024 즉 1M의 char를 
+저장할 수 있는 다이렉트 버퍼를 생성하는 예이다. 
+
+ex)
+CharBuffer cUdBuffer = CharBuffer.allocate(1024*1024);
+
+wrap() : 역시 모든 타입의 버퍼클래스들은 wrap() 메서드가 있다. 
+wrap()은 이미 생성된 배열을 이용해서 버퍼 객체를 생성한다. 
+기존의 배열을 이용하기 때문에 당연히 넌-다이렉트 버퍼이다. 
+다음은 int의 배열인 ints[] 를 이용해 IntBuffer를 생성하는 예이다. 
+
+ex)
+int [] ints = {1,2 ,3, 4, 5, 6};
+IntBuffer iUdBuffer = IntBuffer.wrap(ints);
+
+allocateDirect() : allocateDirect() 는 ByteBuffer에만 존재하는 메서드로 
+다이렉트 버퍼를 생성한다. 다음은 ByteBuffer 타입의 다이렉트 버퍼를 
+생성하는 예이다. 
+
+ex)
+ByteBuffer bDBuffer = ByteBuffer.allocateDirect(1024*1024);
+
+직접적으로 다이렉트 버퍼를 만드는 방법은 ByteBuffer에서 allocateDirect()
+메서드를 사용하는 방법뿐이다. 다른 타입의 버퍼는 일단 다이렉트 버퍼인 
+ByteBuffer를 생성한 후 asP#Buffer() 메서드를 이용해서 타입별 다이렉트
+버퍼를 얻을수 있다. 
+
+ByteBuffer의 버퍼 변환 메서드 
+
+메서드 명 : 선언부와설명
+asP#Buffer() : public abstract PBuffer asP#Buffer()
+ByteBuffer를 P#Buffer 로 변환 후 리턴한다. 
+P#는 Short, Int, Long, Char, Double, Float 을 나타낸다. 
+
+ex)
+ByteBuffer bDBuffer = ByteBuffer.allocateDirect(1024*1024);
+CharBuffer cDBuffer = bDBuffer.asCharBuffer();
+
+(3) 버퍼의 사용 
+버퍼를 사용하기 위해서는 먼저 버퍼의 위치 속성을 
+제어할수 있어야 한다. 
+
+Buffer 클래스에는 버퍼 제어와 관련된 4가지 속성이 있다. 
+
+Buffer의 크기와 위치 관련 속성 
+
+속성 명 : 설명 
+capacity : 버퍼의 최대 개수로 버퍼를 만들 때 지정한 크기를 말한다. 
+
+limit : 버퍼에 있는 데이터의 한계로 처음에는 capacity와 같은 값을 갖는다. 
+이후 flip() 을 실행하면 버퍼의 position이 limit에 할당된다. 
+
+position : 버퍼에서 현재 커서의 위치 값으로 인덱스와 같다. 
+
+mark : reset()을 실행 했을 때 돌아오기 위해 표시해 놓은 인덱스이다. 
+
+위 값의 크기는 0 <= mark <= position <= limit <= capacity이다. 
+
+다음은 position을 제어하기 위한 메서드들이다. 
+
+메서드명 : 선언부와설명
+
+flip() : public final Buffer flip()
+현재의 position을 limit로 설정하고 position을 0으로 변경한다. 
+
+mark() : public final Buffer mark()
+현재 position 위치에 mark를 설정하고 reset() 시 이동할수 있게 한다. 
+
+reset() : public final Buffer reset()
+mark 가 표시된 위치로 position을 이동시킨다.
+
+rewind() : public final Buffer rewind()
+position을 0으로 이동하고 모든 mark를 제거한다. 
+
+clear() : public final Buffer clear() 
+position 을  0으로 이동하고 모든 mark를 제거하며 limit를 capacity로 설정한다. 
+
+버퍼에서 데이터를 읽을 때는 get() 계열의 메서드를 사용한다. 
+
+Buffer 타입별 get() 메서드 
+
+구분 : ByteBuffer : P#Buffer 
+상대적 : get() : get()
+상대적 : get(byte [] dest) : get(p* [] dest)
+상대적 : get(byte [] dest, int offset, int length) : get(p* [] dest, int offset, int length)
+상대적 : putP#(p* value) :
+
+절대적 : get(int index) : get(int index) 
+절대적 : getP#(int index)
+
+P#는 Short, Int, Long, Char, Double, Float을 나타내며, 
+p*는 short, int, long, char, double, float
+
+위 표에서 상대적이라는 말은 버퍼의 현재 position에서 데이터를 읽고 
+저장하는 경우이고 position과 관계없이 특정 위치(index)에서 
+데이터를 읽고 쓰는 경우가 절대적이다. 
+
+처음 버퍼를 사용할 때 position 은 0을 가리키다가 상대적 메서드인 
+get()이 호출되면 0 위치의 데이터를 리턴하고 1증가해서 1을 가리키게 된다. 
+하지만 절대적 메서드들은 position의 증가가 발생하지 않는다. 
+
+절대적 메서드를 통해서 버퍼의 내용을 조회할 때 index는 limit -1 을 
+초과할수 없다.  버퍼에 데이터를 넣을 때는 put() 계열의 메서드를 사용한다. 
+
+Buffer 타입별 put() 메서드 
+구분 : ByteBuffer : P#Buffer
+상대적 : put(byte value) : put(p* value)
+상대적 : put(byte [] src) : put(p* [] src)
+상대적 : put(byte [] src, int offset, int length) : put(p* [] src, int offset, int length)
+상대적 : put(ByteBuffer src) : put(P#Buffer src)
+상대적 : putP#(p* value)
+
+절대적 : put(int index, byte b) : put(int index, p* value)
+절대적 : putP#(int index, p* value)
+P#는 Short, Int, Long, Char, Double, Float을 나타내며, 
+p*는 short, int, long, char, double, float
+
+상대적 및 절대적 메서드의 구분은 get() 계열과 동일하다. 
+절대적 메서드를 통해서 값을 설정할 때 index는 capacity -1을 
+초과할수 없다. 
+
+버퍼의 사용법을 단계별로 알아보자. 
+
+최초 버퍼를 만들면서 capacity를 지정하면 버퍼의 limit는 
+capacity 와 같고, position은 0이다. 
+
+ex)
+ByteBuffer buffer = ByteBuffer.allocate(10);
+
+[][][][][][][][][][][][][] -> limit, capacity : 끝
+position
+
+버퍼에 상대적 메서드를 이용해 데이터를 넣으면 값이 저장되며 
+position이 이동한다.
+
+ex)
+buffer.put(new byte[] {1,2,3,4,5});
+
+[1][2][3][4][5][][][][][] -> limit, capacity : 끝
+5:position
+
+하지만 절대적 메서드를 이용해 데이터를 넣으면 position이 이동하지 않는다. 
+
+ex)
+buffer.put(0, (byte)11);
+buffer.put(7, (byte)7);
+
+[1][2][3][4][5][][7][][][] -> limit, capacity : 끝
+5:position
+
+입력이 끝났다면 flip()을 호출해서 limit를 현재 버퍼의 position으로 
+이동시킨다. 따라서 7의 위치에 입력한 데이터는 접근할수 없게 된다. 
+
+ex)
+buffer.flip();
+
+[11][2][3][4][5][][][][][] -> limit :5, capacity:끝
+5:position
+
+get() 메서드를 이용해서 값을 읽을 때도 절대적 메서드는 
+position을 이동시키지 않지만, 상대적 방식은 읽을 때 마다 
+position을 1씩 이동시킨다. 이때 mark()를 호출하면 현재 position에
+표시(mark)할수 있다. 
+
+ex)
+System.out.println(buffer.get(2)); // 절대적 읽기:3
+System.out.println(buffer.get()); // 상대적 읽기:11
+buffer.mark();
+
+[11][2][3][4][5][][][][][] -> limit :5, capacity:끝
+2:position
+2: mark
+
+다시 상대적인 get() 메서드를 이용해서 버퍼의 값을 읽으면 
+position이 이동한다. 
+
+ex)
+byte [] dst = new byte[3];
+buffer.get(dest);
+System.out.println(Arrays.toString(dest)); // 상대적 읽기 : [2,3,4]
+
+[11][2][3][4][5][][][][][] -> limit :5, capacity:끝
+4:position
+2: mark
+
+position이 이동한 상태에서 reset()을 호출하면 position이 mark()를 
+호출했던 위치로 변경된다. 
+
+ex)
+buffer.reset();
+
+[11][2][3][4][5][][][][][] -> limit :5, capacity:끝
+2:position
+2: mark
+
+다시 상대적인 get() 메서드를 이용해서 버퍼의 값을 읽고 position을 
+이동시킨다.
+
+ex)
+byte [] dest = new byte[3];
+buffer.get(dest);
+System.out.println(Arrays.toString(dest)); // 상대적 읽기 : [2,3,4]
+
+[11][2][3][4][5][][][][][] -> limit :5, capacity:끝
+5:position
+2: mark
+
+rewind() 메서드를 호출하면 position 0으로 이동되고 mark도 사라진다. 
+ex)
+buffer.rewind()
+
+[11][2][3][4][5][][][][][] -> limit :5, capacity:끝
+11:position
+
+clear()를 호출하면 position은 0을 가리키고 mark도 없어지며 
+limt는 capacity로 확장돼서 추가적인 공간 활용이 가능하다. 
+
+ex)
+buffer.clear();
+
+[11][2][3][4][5][][][][][] -> limit , capacity:끝
+11:position
+
+(4) 버퍼의 변환 
+다양한 타입의 버퍼가 존재하지만 사실 채널은 ByteBuffer를 통해서만 
+데이터를 읽고 쓸수 있다. 따라서 채널을 통해 데이터를 쓰고 읽기 전에 
+ByteBuffer로 변환한 뒤에 처리해야 한다. 
+
+635 49/53
+
 ----------------------------------------------------
 4.4 FileChannel 
 

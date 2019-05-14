@@ -23297,12 +23297,163 @@ length -1 까지에 저장한다.
 
 636 50/53
 
+wirte() : public abstract int write(ByteBuffer src) throws IOException
+src 의 내용을 FileChannel을 이용해 출력한다. 
+
+public final long write(ByteBuffer src) throws IOException
+srcs의 내용을 FileChannel을 이용해 출력한다. 
+
+public abstract long write(
+ByteBuffer[] srcs, int offset, int length) throws IOException
+srcs의 offset부터 length -1 까지의 내용을 FileChannel을 이용해 
+출력한다. 
+
+transferTo() : public abstract long transferTo(long position, long count,
+WritableByteChannel target) throws IOException
+bb를 CharBuffer로 변환 후 리턴한다. 
+
+transferFrom() : public abstract long transferFrom(ReadableByteChannel src, 
+long position, long count) throws IOException
+bb를 CharBuffer로 변환 후 리턴한다. 
+
+(1) 파일 열기와 닫기 
+
+637 51/53
+
+FileChannel의 open()과 close() 메서드는 FileChannel을 열거나 닫는다. 
+open()시에는 OpenOption을 파라미터로 전달할수 있다. 
+OpenChannel의 구현체로 enum인 SharedOpenOption을 사용한다. 
+
+다음은 SharedOpenOption에 정의된 enum 상수 값이다. 
+
+SharedOpenOption의 enum 상수값 
+
+enum 상수값 : 설명 
+
+READ : 읽기용으로 파일을 오픈한다. 
+WRITE : 쓰기용으로 파일을 오픈한다. 
+CREATE : 파일이 없으면 새로운 파일을, 있으면 기존 파일을 오픈한다. 
+CREATE_NEW : 새 파일을 만들며 기존 파일이 있으면 
+java.nio.FileAlreadyExistsException 예외가 발생한다. 
+APPEND : 파일 뒤에 내용을 추가한다. 
+DELETE_ON_CLOSE : 주로 임시 파일에 사용되며 
+채널을 닫을 때 파일을 삭제한다. 
+
+실제 FileChannel을 열기 위해서는 SharedOpenOption을 조합해서 사용한다. 
+읽기 전용으로 사용하려는 경우는 SharedOpenOption.READ가 사용되고 
+파일을 생성하고 내용을 쓰기 위해서는 SharedOpenOption.CREATE_NEW 와 
+SharedOpenOption.WRITE를 사용한다. 
+
+(2) 파일 읽기와 쓰기 
+파일 읽기와 쓰기에는 앞서 학습한 Buffer를 파라미터로 read()와 
+write() 메서드를 사용한다. 기본적인 사용법은 스트림과 유사하다. 
+read() 할 때에는 읽은 데이터의 개수가 리턴되는 데 더 이상 읽을 
+데이터가 없을 때에는 -1이 리턴된다. 
+
+다음은 FileChannel을 이용해서 데이터를 읽고 쓰는 예이다. 
+
+ex)
+package ch15.nio.channel;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+
+public class FileChannelTest {
+
+	public static void main(String[] args) {
+		FileChannelTest fct = new FileChannelTest();
+		fct.writeToFile();
+		fct.copyFile();
+	}
+
+	public void writeToFile() {
+		Path srcPath = Paths.get("c:/Temp/byChannel.txt");
+		Charset utf8 = Charset.forName("utf-8");
+		try (FileChannel writeChannel = FileChannel.open(srcPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);) {
+			String src = "안녕 FileChannel. 일반 I/O 대비 쉽나요?";
+			ByteBuffer bBuffer = utf8.encode(src);
+
+			int byteCnt = writeChannel.write(bBuffer);
+			System.out.println(byteCnt + "byte 출력 완료!");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void copyFile() {
+		Path srcPath = Paths.get("c:/Temp/byChannel.txt");
+		Path targetPath = Paths.get("c:/Temp/byChannel2.txt");
+		try (FileChannel readChannel = FileChannel.open(srcPath, StandardOpenOption.READ);
+			 FileChannel writeChannel = FileChannel.open(targetPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);) {
+			int read = -1;
+			ByteBuffer readBuffer = ByteBuffer.allocate(20);
+			while ((read = readChannel.read(readBuffer)) > 0) {
+				readBuffer.flip();// position을 다시 0으로 변경 필요
+				writeChannel.write(readBuffer);
+				readBuffer.clear();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+//
+48byte 출력 완료!
+
+문자열을 저장할 Path 객체 srcPath를 생성한다. 
+
+문자열을 ByteBuffer로 변경하기 위해 utf-8을 기반으로 하는 Charset을 
+생성한다. 
+
+파일 생성 + 쓰기 옵션을 이용해 FileChannel인 writeChannel을 생성한다. 
+
+Charset을 이용해 문자열을 ByteBuffer bBuffer로 변환한다. 
+
+writeChannel을 이용해 bBuffer의 내용을 출력하면 srcPath에 
+내용이 저장된다. 
+
+읽고 쓰기 위한 readChannel과 writeChannel을 생성한다. 
+readChannel은 읽기 전용, writeChannel은 생성 및 쓰기 옵션을 
+적용한다. 
+
+크기가 20byte인 ByteBuffer를 다이렉트 모드로 생성한다. 
+
+readChannel을 이용해 읽은 내용을 readBuffer에 저장한다. 
+이때 읽은 개수가 -1이면 반복을 벗어난다. 이 때 readBuffer에 쓰는 작업이 
+일어나므로 position은 19까지 이동한 상태이다. 
+
+flip() 메서드를 이용해 position을 0으로 이동시킨다. 
+
+writeChannel의 write() 를 통해 readBuffer의 내용을 출력한다. 
+
+readBuffer의 clear()를 통해 버퍼를 초기화한다. 
+
+
+
 ===================================
 [자바 해바라기 정리] 16 스트림 API
 
 1. 스트림 API 소개 
 
+스트림 API란 자바 8에서부터 추가된 java.util.stream 패키지로 I/O의 스트림과는 
+전혀 무관하다. 
+스트림 API의 주요 목적은 배열을 포함 컬렉션(데이터 소스)의 저장 요소를 
+하나씩 참조해서 람다식으로 처리할수 있도록 해주는데 있다. 
+사실 스트림 API가 하던 일들은 기존에도 개발자의 코드를 통해서 
+처리하던 일이다. 그 럼 왜 스트림 API가 필요한지 스트림 API의 주요 역할과 
+특징에 대해 알아보자. 
+
 1.1 스트림 API 의 주요 역할과 특징 
+
+(1)간결한 코드. 
+
+640 1/42
+
 
 ----------------------------------------------------
 2. 스트림 API 자료 처리 

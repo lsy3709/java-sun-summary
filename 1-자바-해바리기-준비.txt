@@ -23755,39 +23755,917 @@ lines가 사용하는 요소의 개수를 출력하고 close() 처리한다.
 
 646 7/42
 
+스트림 소스에서 스트림을 생성하면 본격적으로 스트림 API를 사용할수 있다. 
+스트림 API는 맵/리듀스 모델을 지원하는데 맵/리듀스 모델은 대규모의 
+데이터 집합을 처리하기 위한 모델이다. 
+
+맵은 중간 처리 과정으로 데이터들을 다양한 메서드에 매핑시켜서 원하는 형태로 
+가공하고 걸러낸다. 필요에 따라서 여러 메서드를 연결해서 사용할수 있다. 
+이 중간 처리의 예 로는 중복 제거, 필터링, 생략, 변환, 정렬 등을 들수 있다. 
+
+리듀스는 최종 처리 과정으로 맵의 결과를 줄여서 원하는 결과로 반환하는 것이다. 
+최종 처리는 중간 연산과 달리 한번만 사용한다. 최종 처리의 예로 각 요소에 
+대해 지정된 작업을 수행하거나 최대, 최소를 구하는 등을 들수 있다. 
+
+중간 처리 과정 메서드들은 스트림을 리턴하는데 이는 기존 스트림을 바탕으로 
+한 새로운 스트림 객체이다. 즉 String 과 마찬가지로 스트림도 한 번 만들어지면 
+변경되지 않는다. 최종 처리 과정은 스트림이 아니라 메서드에 적합한 값을 
+리턴한다. 
+
+단계별 주요 처리 메서드들을 알아보자. 
+
+ex)단계별 주요 메서드 
+
+중간 처리 
+용도 : 메서드
+필터링 : distinct(), filter()
+자르기 : skip(), limit()
+정렬 : sorted()
+매핑(변환) : flatMap(), flatMapToP#(),
+map(), mapToP#(),asDoubleStream(),
+asLongStream()
+조회 : peek()
+
+최종처리 
+용도 : 메서드 
+매칭 : allMatch(), anyMatch(), noneMatch()
+수집 : collect()
+루핑 : forEach()
+집계 : count(), max(), min(), average(), sum(), reduce()
+조사 : findFirst(), findAny() 
+
+P#는 Int, Long, Double 을 나타낸다. 
+
+또 한 가지 특이한 점은 스트림 API는 최종 처리가 진행될 때까지 
+중간 처리는 지연된다는 점이다. 
+다음 코드는 mapToInt()라는 중간 처리 메서드를 사용했지만, 
+최종 처리가 아직 없다. 따라서 아무것도 출력되지 않는다. 
+
+ex) 
+list.stream().mapToInt(data -> {
+System.out.println("문자열의 길이: " + data);
+return data.length();
+});
+
+다음 예처럼 최종 처리 메서드를 호출할 경우 비로소 중간 처리 메서드가 
+동작한다. 
+
+ex)
+list.stream().mapToInt(data -> {
+System.out.println("문자열의 길이 :  "+ data);
+return data.length();
+}).sum();
+
+이제 본격적으로 스트림 API를 이용한 자료 처리 방식에 대해 알아보자. 
+참고로 API에 대한 설명은 Stream 클래스를 기준으로 일부만 진행하며 
+대부분 경우 IntStream, LongStream, DoubleStream에도 유사한 
+메서드가 제공된다. 
 ----------------------------------------------------
 3. 중간 처리 
 
 3.1 필터링 
 
+필터링은 스트림의 요소 일부를 줄이는 역할을 한다. 
+
+ex) 필터 역할을 하는 Stream의 중간 처리 메서드 
+
+메서등 명 : 선언부와설명
+distinct() : Stream<T> distinct()
+스트림 요소의 중복을 제거한 스트림을 리턴한다. 
+
+filter() : Stream<T> filter(Predicate< ? super T> predicate)
+Predicate의 test()가 true를 리턴하는 요소로 구성된 스트림을 리턴한다. 
+
+distinct() 가 중복으로 판단하는 기준은 Object의 equals() 결과가 true이고 
+hashCode()가 같은 값을 리턴할 때이다. 
 ----------------------------------------------------
 3.2 자르기 
+자르기는 스트림의 일부 요소를 생략한다. 
+
+ex) 자르기 역할을 하는 Stream의 중간 처리 메서드 
+
+메서드 명 : 선언부와 설명 
+limit() : Stream<T> limit(long maxSize)
+스트림 요소에서 maxSize 까지만으로 구성된 스트림을 리턴한다. 
+
+skip() : Stream<T> skip(long n) 
+스트림 요소에서 상위 n 개가 생략된 스트림을 리턴한다. 
 
 ----------------------------------------------------
 3.3 정렬 
 
+정렬은 스트림의 요소들을 내장 또는 사용자 정의 Comparator를 이용해 
+정렬 처리한다. 
+
+ex) 자르기 역할을 하는 Stream 의 중간 처리 메서드 
+메서드명 : 선언부와 설명 
+sorted() : Stream<T> sorted()
+스트림의 요소가 Comparable 타입일 때 요소의 compare() 메서드를 이용해 
+정렬된 스트림을 리턴한다. 
+
+Stream<T> sorted(Comparator<? super T> comparator)
+Comparator에 의해 정렬된 요소의 스트림을 리턴한다. 
+
+(1) Comparator의 static , default 메서드 
+자바 8에서부터는 Comparator에 많은 수의 static 메서드와 default 메서드가 
+추가되어 편리하게 사용할수 있다. 
+
+다음은 Comparator의 자주 사용되는 static 메서드 예시이다. 
+
+ex)Comparator 의 static 메서드 
+
+메서드 명 : 선언부와설명
+
+naturalOrder() : public static <T extends Comparable < ? super T>>
+Comparator<T> naturalOrder()
+Comparable 타입의 T의 compareTo()에 의해 오른차순 정렬하는 
+Comparator를 리턴한다. 
+
+reverseOrder() : public static <T extends Comparable<? super T>>
+Comparator<T> reverseOrder()
+naturalOrder()의 역순으로 정렬하는 Comparator를 리턴한다. 
+
+comparing() : public static <T, U extends Comparable<? super U>>
+Comparator<T> comparing(Function<? super T, ? extends U>keyExtractor)
+Function이 T를 파라미터로 받아서 Comparable 타입의 U를 리턴할 때 
+U를 기준으로 정렬하는 Comparator<T>를 리턴한다. 
+
+comparingP#() : public static <T> Comparator <T>
+comparingT(ToP#Function<? super T> keyExtractor)
+comparing()에서 U의 타입이 P일 경우 별도의 오토박싱 없이 처리하는 
+메서드이다. 
+
+nullsFirst() : public static <T> Comparator<T>
+nullsFirst(Comparator<? super T> comparator)
+정렬 결과 null 값을 맨 처음에 위치 시킨다. 
+
+nullsLast() : public static <T> Comparator <T> nullsLast(
+Comparator<? super T> comparator)
+정렬 결과 null 값을 맨 나중에 위치시킨다. 
+
+P#는 Int, Long, Double을 나타낸다. 
+
+다음은 Comparator의 comparing() 메서드 사용 예로 문자열을 입력받아서 
+반환되는 길이를 기준으로 정렬하는 Comparator를 반환한다.
+
+ex)
+Comparator<String> byLength =
+Comparator.comparing(str -> { retrun str.length(); });
+
+다음은 Comparator의 자주 사용되는 default 메서드 예시이다. 
+
+ex)
+Comparator 의 default 메서드 
+메서드 명 : 선언부와 설명 
+reversed() : default Comparator<T> reversed()
+현재 Comparator의 정렬 방식의 역순으로 정렬하는 Comparable를 
+리턴한다. 
+
+thenComparing() : default Comparator<T> thenComparing(
+Comparator<? super T> other)
+)
+1차 정렬 이후 추가적인 정렬을 위한 Comparator를 리턴한다. 
+
+thenComparingP#() : default Comparator<T> thenComparingP#(
+ToP#Function< ? super T> keyExtractor)
+비교 대상이 기본형인 경우 thenComparing () 대신 사용한다. 
+
+P#는 Int, Long, Double 을 나타낸다. 
+
+위 메서드들은 default 메서드이기 때문에 기본 정렬 객체를 하나 두고 
+거기에 연결해서 사용한다. 
+즉 기본 정렬을 만든 후 역순으로 정렬하게 하거나 기본 정렬을 만든 후 
+추가적인 2차, 3차 정렬 기준을 추가하는 형태다. 
+
+다음 예는 String의 compareTo()를 이용하는 strComp를 만든다. 
+여기에 역순 정렬을 위한 reversed()를 추가해 알파벳 내림차순으로
+바꾼 후 thenComparing()을 통해 2차 정렬로 길이를 비교한다. 
+
+ex)
+package ch16.intermediate;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+public class IntermediateOperation1 {
+	List<String> words;
+
+	public void setUpStream() {
+		Path text = Paths.get("./src/res/강남스타일.txt");
+		try {
+			byte[] bytes = Files.readAllBytes(text);
+			String data = new String(bytes);
+			words = Arrays.asList(data.split("\\b"));
+			System.out.println("초기 단어 개수: " + words.size());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void filterTest() {
+		System.out.println("[필터 테스트]");
+		System.out.println("중복 제거 결과: " + words.stream().distinct().count());
+		System.out.println("필터 결과: " + words.stream().filter(a -> {
+			return a.length() > 5;
+		}).count());
+	}
+
+	public void limitTest() {
+		System.out.println("[자르기 테스트]");
+		System.out.println("중복 제거 결과: " + words.stream().limit(5).count());
+		System.out.println("필터 결과: " + words.stream().skip(5).count());
+	}
+
+	public void sortTest() {
+		System.out.println("[정렬 테스트]");
+		words.stream().distinct().sorted((a, b) -> {
+			return a.compareTo(b)*-1;
+		}).limit(3).forEach(System.out::println);
+	}
+
+	public static void main(String[] args) {
+		IntermediateOperation1 ft = new IntermediateOperation1();
+		ft.setUpStream();
+		ft.filterTest();
+		ft.limitTest();
+		ft.sortTest();
+		Comparator.reverseOrder();
+	}
+}
+//
+초기 단어 개수: 328
+[필터 테스트]
+중복 제거 결과: 72
+필터 결과: 2
+[자르기 테스트]
+중복 제거 결과: 5
+필터 결과: 323
+[정렬 테스트]
+한잔의
+품격
+푸는
+
+//단어들을 저장할 List<String> words를 선언한다. 
+
+강남스타일.txt 파일을 읽은 후 단어별로 쪼개서 words에 저장한다. 
+문서의 내용 전체를 이용해 문자열을 만든 후 split() 메서드를 이용해서 
+단어 단위로 쪼갠다. split()의 파라미터인 "\\b"는 정규표현식으로 
+단어의 경계문자(boundary word : 공백, 쉼표, 개행 문자등)을 
+나타낸다. 출력 결과를 보면 초기 단어의 개수는 328개이다. 
+
+스트림에 필터 처리를 해본다. 27행은 distinct()가 중간 처리, 
+count() 가 최종 처리이다. 중복을 제거한 결과는 72개이다. 
+28~30행에서는 filter()를 적용하는데 
+Predicate에서는 문자열의 길이가 5를 넘는 경우만 대상으로 한다. 
+결과는 2개이다. 
+
+스트림에 자르기 처리를 해본다.  35행은 limit()를 이용해서 
+상위 5개만을 대상으로 삼는다. 36행의 skip()에서는 5개를 
+생략한다. 따라서 결과는 328에서 5개가 제외되므로 323이된다. 
+
+스트림에 정렬 처리를 해본다. 여기서는 distinct()->sorted()->limit()
+의 순서로 중간 처리 스트림을 사용한다. sorted()에서는 String의 알파벳 
+내림차순으로 정렬하도록 Comparator를 제공한다. 최종 처리 메서드로 
+forEach()를 사용하여 요소들을 출력한다. 
+
 ----------------------------------------------------
 3.4 매핑(변환)
 
+매핑은 스트림 요소의 값 중에서 원하는 부분만 뽑아내거나 특정 형태로 
+변환할 때 사용된다. 매핑 계열을 Function 인터페이스를 파라미터로 
+받는다. 매핑에는 크게 map() 계열과 flatMap() 계열이 있다. 
+
+map()계열은 기존 스트림 요소와 1:1로 구성된 새로운 스트림을 생성한다. 
+예를 들어 문자열(String)로 구성된 스트림을 문자열의 길이 (int)로 
+구성된 스트림으로 변경할수 있다. 
+반면 flatMap()은 기존 스트림 요소에 대해 1:n 으로 대응된 새로운 스트림을 
+리턴한다. 예를 들어 문자열(String)로 구성된 스트림을 문자(char...)로 
+구성된 스트림으로 변경할수 있다. 
+
+ex) 매핑을 위한 Stream의 중간 처리 메서드 
+
+메서드명 : 선언부와 설명 
+
+map() : <R> Stream<R> map(Function<? super T, ? extends R> mapper)
+스트림의 요소 T와 1:1로 대응되는 R로 구성된 새로운 스트림을 리턴한다. 
+
+mapToP#() : P#Stream mapToP#(ToP#Function<? super T> mapper)
+map()에서 R이 P로 한정된다. 별도의 형변환이 필요 없는 장점이 있다. 
+
+flatMap() : <R> Stream <R> flatMap(
+Function<? super T, ? extends Stream<? extends R>>mapper)
+map()에서 R이 P로 한정된다. 별도의 형변환이 필요 없는 장점이 있다. 
+
+flatMap() : <R> Stream<R> flatMap(
+Function<? super T, ? extends Stream<? extends R>> mapper)
+스트림의 요소 T가 1:n 으로 해체돼서 n개의 R로 구성된 새로운 스트림을 리턴한다. 
+
+flatMapToP#() : P#Stream flatMapToP#(
+Function<? super T, ? extends P#Stream> mapper) 
+flatMap()에서 R이 P#로 한정된다. 별도의 형변환이 필요없는 장점이 있다. 
+P#는 Int, Long, Double을 나타낸다. 
+
+Stream의 mapToP#() 나 flatMapToP#()와 비슷하게 IntStream, LongStream,
+DoubleStream은 mapToObj()와 flatMapToObj() 메서드가 존재한다. 
+역할은 기본형을 객체형으로 바꿔준다. 
+
+(1) map() 계열 
+중간 연산으로 map 계열의 매핑이 사용하는 예제를 살펴보자. 
+
+ex)
+package ch16.intermediate;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.IntStream;
+
+public class IntermediateOperation2 {
+
+	public static void main(String[] args) {
+		List<String> list = Arrays.asList("Hello", "Stream");
+		// String -> char []
+		list.stream().map(item -> item.toCharArray()).forEach(data -> {
+			System.out.println(data.length);
+		});
+		// String -> int
+		IntStream is = IntStream.range(3, 5);
+		is.mapToObj(num -> {
+			return "제곱: " + num * num;
+		}).forEach(System.out::println);
+	}
+}
+//
+5
+6
+제곱: 9
+제곱: 16
+
+// String으로 구성된 스트림을 map() 메서드를 이용해 char[]로 구성된 
+스트림으로 변경 후 각 요소의 length 속성값을 출력한다. 
+
+Hello, Stream -> [H,e,l,l,o], [S,t,r,e,a,m]
+
+int 로 구성된 스트림을 mapToObj() 메서드를 이용해 문자열(제곱: O 등)
+로구성된 스트림으로 변경하고 각 요소를 출력한다. 
+
+3, 4 -> 제곱 :9, 제곱 :16
+
+이처럼 map() 계열은 스트림의 요소 개수는 변경되지 않는다. 
+
+(2)flatMap() 계열 
+다음은 flatMap() 계열이 필요한 경우를 생각해보자. 
+
+단어들로 구성된 스트림에서 사용된 모든 알파벳의 개수를 알아보려면 
+어떻게 해야 할까? 이요청 사항을 처리하기 위해서는 단어로 구성된 스트림보다는 
+각 단어를 구성하고 있는 알파벳들로 구성된 스트림이 필요할 것이다. 
+이를 위해 split()을 이용해서 문자열을 분리하고 스트림으로 만들어보자. 
+이때 문자열이 map()을 이용해 알파벳으로 구성된 스트림을 변경될수 있다. 
+
+ex)
+List<String> list =Arrays.asList("Hello", "Stream");
+System.out.println(list.stream().map(data -> {
+return Arrays.stream(data.split("");
+}).count());
+
+기대와 달리 위 코드의 출력 결과는 2이다. map()을 통해 새롭게 구성된 
+스트림은 바램과 달리 Stream <Stream <String>>의 형태이다. 
+
+Hello, Stream -> H, e, l, l, o   S,t,r,e,a,m 
+
+여기서는 Stream<String>의 형태의 스트림으로 구성해야 개별 문자의 개수를 
+셀수 있다. 이 때 사용되는 것이 flatMap()이다. 
+flatMap()은 기존의 스트림 요소를 n개로 분해한 요소들로 이뤄진 스트림을 
+생성한다. 다음과 같이 map()을 flatMap()으로 변경 후 실행해보면 11이 출력된다. 
+
+ex)
+List<String> list =Arrays.asList("Hello", "Stream");
+System.out.println(list.stream().flatmap(data -> {
+return Arrays.stream(data.split("");
+}).count());
+
+Hello, Stream -> H, e, l, l, o,S,t,r,e,a,m 
+
 ----------------------------------------------------
 3.5 조회(주석)
+
+peek() 메서드는 스트림 처리 과정에서 처리가 잘 되고 있는지 확인 할 때 
+사용되는 중간 처리이다. 일반적으로 스트림 처리를 확인하는 로그 출력의 용도로 
+많이 사용된다. peek()는 Consumer를 파라미터로 받으며 전체 처리에 아무런 
+영향을 끼치지 않으므로 여러 번 실행해도 무방하다. 
+
+ex) 조회(검사)를 위한 Stream 의 중간 처리 메서드 
+
+메서드 명 : 선언부와설명
+peek() : Stream<T> peek(Consumer < ? super T> action)
+스트림의 요소 T와 1:1 로 대응되는 R로 구성된 새로운 스트림을 리턴한다. 
+
+list.stream().flatMap( data -> {
+return Arrays.stream(data.split(""));
+}).peek(item -> System.out.println("flat map 후 중간점검: " + item))
+.distinct()
+.peek(item -> System.out.println("distinct 후 중간점검 : " + item))
+.forEach(System.out::println);
 
 ----------------------------------------------------
 4. 최종 처리 
 
 4.1 매칭
 
+매칭은 요소들이 특정 조건에 만족하는지 조사하는 기능이다. 
+매칭을 위해서는 allMatch(), anyMatch(), noneMatch()가 사용된다. 
+이 메서드들은 파라미터로 Predicate를 전달받고 그 결과를 이용해 판단한다. 
+
+ex)
+매칭을 위한 Stream의 최종 처리 메서드 
+
+메서드명 : 선언부와설명
+
+allMatch() : boolean allMatch(Predicate<? super T> predicate)
+스트림의 모든 요소가 Predicate의 조건을 만족하면 true를 리턴한다. 
+
+anyMatch() : boolean anyMatch(Predicate<? super T> predicate)
+스트림의 요소 중 하나라도 Predicate의 조건을 만족하면 true를 리턴한다. 
+
+noneMatch() : boolean noneMatch(Predicate<? super T> predicate)
+스트림의 요소 중 하나도 Predicate의 조건을 만족하지 않으면 true를 리턴한다. 
+
+다음은 문서의 단어를 이용해 스트림을 구성한 후 그중 5글자 이상인 것이 
+있는지를 anyMatch()를 이용해 구현한 예이다. 
+
+ex)
+package ch16.terminate;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+
+public class MatchingTest {
+
+	public static void main(String[] args) throws IOException {
+		Path text = Paths.get("./src/res/강남스타일.txt");
+		List<String> lines = Files.readAllLines(text);
+		boolean result = lines.stream()
+		.flatMap(line -> {
+			return Arrays.stream(line.split("\\b"));
+		}).distinct().filter(word -> {
+			return word.trim().length() > 0;
+		}).peek(System.out::println)
+		.anyMatch(word -> {
+			return word.length() > 5;
+		});
+		System.out.println("stream의 단어들에는 5글자 이상인 것이 있다? "+result);
+	}
+}
+//
+오빤
+강남스타일
+낮에는
+따사로운
+인간적인
+여자
+커피
+한잔의
+여유를
+아는
+품격
+있는
+밤이
+오면
+심장이
+뜨거워지는
+그런
+반전
+나는
+사나이
+너만큼
+식기도
+전에
+원샷
+때리는
+터져버리는
+아름다워
+사랑스러워
+그래
+너
+hey
+바로
+지금부터
+갈
+때까지
+가볼까
+오
+-
+오빤강남스타일
+stream의 단어들에는 5글자 이상인 것이 있다? true
+
+//
+Path와 Files를 이용해 강남스타일.txt의 문장들을 List<String> lines에 저장한다. 
+
+lines에서 스트림을 생성한다. 리턴 타입이 boolean인 이유는 최종 처리 메서드
+anyMatch() 때문이다. 
+
+flatMap()을 이용해서 문장 -> 단어 형태로 구성된 스트림으로 변경한다. 
+
+distinct()를 통해 스트림에서 중복을 제거한 후 filter()를 이용해 단어의 길이가 
+0 이상인 요소들만 스트림에 남긴다. 
+
+peek()을 이용해 현재 스트림의 내용을 출력해서 내용을 확인한다. 
+
+최종 처리 메서드인 anyMatch()에서는 길이가 5를 넘는 단어가 스트림에 
+하나라도 있다면 true를 리턴한다. 
+
 ----------------------------------------------------
 4.2 집계
+
+(1) 기본 집계 함수 
+통계를 내는 집계 함수는 count(), sum(), average(), min(), max() 가 있다. 
+통계는 숫자를 이용하기 때문에 기본형 스트림인 IntStream, LongStream ,
+DoubleStream에서는 모두 사용할수 있지만, Stream에서는 count()와,
+min(), max()만 사용할 수 있다. 
+
+ex) 통계를 위한 Stream의 최종 처리 메서드 
+
+메서드명 : 선언부와 설명 
+
+count : long count()
+스트림 내 요소의 개수를 리턴한다. 
+
+min() : Optional<T> min(Comparator<? super T> comparator)
+Stream에서 comparator에 의거 최소 요소를 Optional 타입으로 리턴한다. 
+
+OptionalP#min()
+기본형 스트림에서 요소의 최소값을 리턴한다. 
+
+max() : Optional<T> max(Comparator<? super T> comparator)
+Stream에서 comparator에 의거 최대 요소를 Optional 타입으로 리턴한다. 
+
+OptionalP#max()
+기본형 스트림에서 요소의 최대값을 리턴한다. 
+
+average() : OptionalDouble average()
+기본형 스트림에서 요소들의 평균값을 리턴한다. 
+
+sum() : P# sum()
+기본형 스트림에서 요소들의 총 합을 리턴한다. 
+P#는 Int, Long, Double 을 나타내고 ,
+p* int, long, double 을 나타낸다. 
+
+이 메서드들의 사용 자체는 매우 간단하지만, Stream의 max()와 
+min()에서 리턴되는 Optional<T>의 용법은 살펴볼 필요가 있다. 
+
+(2) java.util.Optional
+여기서 등장하는 java.util.Optional<T>은 T 타입의 객체가 존재하는지 여부에 
+따라 동작하는 래퍼(wrapper) 클래스이다. Optional<T>를 이용하면 
+참조하려는 객체가 null인 경우와 그렇지 않은 경우의 처리를 보다 안전하게 
+프로그래밍할 수 있다. Optional 을 사용할 때는 값이 null로 없는 경우 대체 값을 
+생산(Producer)하고 값이 있을 경우는 그 값을 소비(Consumer)한다. 
+
+Optional 객체를 생성할 때는 Optional에서 제공되는 정적 메서드를 사용한다. 
+
+Optional 생성을 위한 메서드 
+
+메서드명 : 선언부와 설명 
+
+of() : public static <T> Optional<T> of(T value)
+value가 null이 아닌 상황에서 이를 래핑하는 Optional을 리턴한다. 
+value가 null인 경우 NullPointerException이 발생한다. 
+
+ofNullable() : public static <T> Optional<T> ofNullable( T value)
+value 가 null 일 가능성이 있는 상황에서 value을 래핑하는 Optional을 
+리턴한다. value가 null인 경우 empty()의 결과를 리턴한다. 
+
+empty() : public static<T> Optional<T> empty()
+값이 비어 있는 Optional 객체를 리턴하는데 일반적으로 이 값이 
+Optional의 초기값으로 사용된다. 
+
+Optional 객체에서 값을 가져오기 위해서는 get() 메서드를 사용한다. 
+get() 메서드는 값이 없을 경우 NullPointerException을 발생시키는데 
+Optional의 장점은 이 예외 상황에 대처하는 코드를 작성하는데 있다. 
+Optional의 orElse()는 값이 null이 아닌 경우는 값을 리턴하고 값이 null
+이어서 NullPointerException이 발생할 때는 대체할 값을 리턴한다. 
+유사한 메서드로 orElseGet() 과 orElseThrow()가 제공된다. 
+
+ex) Optional 의 값을 처리하는 메서드 
+
+메서드 명 : 선언부와 설명 
+
+get() : public T get()
+Optional의 값을 리턴한다. 만약 null 일 경우 NullPointerException이 
+발생한다. 
+
+ifPresent() : public void IfPresent(Consumer <? super T> consumer)
+Optional 값이 null 일 아닐 경우 consumer를 통해 값을 소비한다. 
+
+orElse() : public T orElse( T other)
+Optional의 값이 null 일 경우 other를 리턴한다. 
+
+orElseGet() : public T orElseGet(Supplier <? extends T> other)
+Optional의 값이 null 일 경우 Supplier인 other를 통해 공급받은 값을 
+리턴한다. 
+
+orElseThrow : public <X extends Throwable> T orElseThrow(
+Supplier<? extends X> exceptionSupplier) throws X 
+Optional의 값이 null 일 경우 exceptionSupplier에서 리턴한 예외를 
+throws 시킨다. 
+
+다음은 Optional의 사용 예이다. 
+
+ex)
+
+String str = "abc";
+Optional<String> optVal = Optional.of(str);
+System.out.println(optVal.get());
+optVal.ifPresent(val -> System.out.println("optVal: "+val));
+
+Optional<String> nullVal = Optional.ofNullable(null);
+System.out.println(nullVal.orElse("널 대체 1"));
+System.out.println(nullVal.orElseGet(() -> {
+return " 널 대체 2";
+}));
+
+또한, Optional 역시 Stream 처럼 filter(), map, flatMap()과 
+같은 메서드를 사용할수 있다. 
+
+다음은 Optional<String>의 값이 4글자 이상이면 값을 출력하고 그렇지 
+않으면 '4글자 미만'이라고 출력하는 예이다. 
+
+ex)
+String ifOver4 = Optional.of("Hello").filter(val -> {
+return val.length() >= 4;
+}).orElse("4글자 미만");
+System.out.println(ifOver4);
+이제 집계 함수에서 Optional이 사용되는 예를 살펴보자. 
+
+ex)
+package ch16.terminate;
+
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Random;
+import java.util.stream.IntStream;
+
+public class AggregateTest {
+
+	public static void main(String[] args) {
+		IntStream is = new Random().ints(10, 1, 6);
+		System.out.println("총합은: " + is.sum());
+
+		String[] strs = { "Hi", "C", "Java", "zoo", "World" };
+		Optional<String> max = Arrays.stream(strs).max(String::compareTo);
+		max.ifPresent(val -> {
+			System.out.println("최대값은: " + val);
+		});
+
+		String result = max.filter(val -> {
+			return val.matches("[가-힣]{1,}");
+		}).orElse("한글 중에는 없다.");
+		System.out.println(result);
+
+	}
+}
+//
+총합은: 33
+최대값은: zoo
+한글 중에는 없다.
+
+//Random 클래스의 ints()를 통해 1~6 까지의 랜덤 정수 10개로 
+구성된 IntStream을 얻는다. 
+
+IntStream의 sum()을 이용해 스트림 내 요소들의 총합을 출력한다. 
+
+String [] strs 를 이용해 스트림을 만들고 max()를 이용해 알파벳 순으로 
+가장 큰 값을 Optional<String> 타입의 max로 리턴 받는다. 
+
+max에 값이 있다면 해당 값을 출력한다. 
+
+max에 filter() 연산을 추가해서 값이 한글로 구성된 경우는 바로 리턴하지만, 
+그렇지 않으면 '한글 중에는 없다'로 대체해서 출력한다. 
+
+(3)사용자 정의 집계함수 
+sum(), max(), min()등의 집계 함수가 미리 정해진 통계방식에 의한 집계 
+처리라면 reduce()는 사용자 정의 집계 처리가 가능하다. 
+reduce()는 함수 이름에서 알수 있듯이 스트림이 가지고 있는 요소를 
+줄여가면서 연산한다. 즉 처음 두 요소를 가지고 연산 후 그 결과를 이용해 
+다음 요소와 연산을 반복하고 전체 요소와의 연산이 끝나면 비로소 결과를 
+리턴한다. 따라서 reduce()는 파라미터로 BinaryOperator를 갖는다. 
+
+ex) 사용자 정의 집계 처리를 위한 Stream의 최종 처리 메서드 
+메서드 명 : 선언부와 설명 
+
+reduce() : Optional<T> reduce(BinaryOperator <T> accumulator)
+accumulator의 연산을 수행하고 Optional<T> 타입을 반환한다. 
+
+T reduce(T identity, BinaryOperator<T> accumulator)
+초기값 identity와 스트림의 연산이 최초로 이뤄진다 
+따라서 리턴되는 값은 Optional<T>이 아니라 그냥 T가 된다. 
+
+<U> U reduce(U identity , BiFunction<U,? super T, U> accumulator,
+BinaryOperator <U> combiner)
+identity와 accumulator를 이용해 연산을 수행하고 병렬 스트림에 의해 
+처리된 결과를 combiner를 통해 합한다. 
+
+앞서 살펴본 count()나 sum() 등 통계형 집계함수도 사실은 reduce를 통해서 
+구현된 것이다. 다음은 초기값을 0으로 하고 두 요소를 더하는 형태의 
+BinaryOperator가 사용된 예이다. 
+
+ex) 
+IntStream is = Arrays.stream(new int [] { 1,2,3,4,5});
+int sum = is.reduce(0, (a,b) -> a + b);
+System.out.println(sum);
 
 ----------------------------------------------------
 4.3 반복 
 
+forEach() 메서드는 스트림 요소를 순차적으로 소비하는 메서드이다. 
+파라미터로 전달 되는 Consumer<T>에 요소를 활용하는 코드를 작성한다. 
+
+ex) 반복을 위한 Stream의 최종 처리 메서드 
+
+메서드 명 : 선언부와 설명 
+forEach() : void forEach(Consumer <? super T> action)
+스트림의 각 요소에 대해 action을 수행한다. 
+
+다음 예는 문자열로 구성된 스트림을 정렬 후 문자열과 길이를 
+출력하는 예이다. 
+
+ex) 
+String [] strs = { "Hi", "C", "Java","Zoo","World"};
+Stream<String> fromArr = Arrays.stream(Strs);
+fromArr.sorted().forEach(data -> {
+System.out.println(data + " : 길이 : "+ data.length());
+});
+
 ----------------------------------------------------
 4.4 조사 
 
+findFirst()와 findAny()는 각각 스트림의 첫 번째 요소 또는 위치와 관계없이 
+포함 여부를 조사하는 최종 처리 메서드이다. 
+
+ex) 요소 조사를 위한 Stream의 최종 처리 메서드 
+
+메서드명 : 선언부와설명
+
+findFirst() : Optional<T> findFirst()
+스트림의 맨 처음 요소 또는 null을 갖는 Optional 객체를 리턴한다. 
+
+findAny() : Optional<T> findAny()
+스트림에 있는 어떤 요소 또는 null을 갖는 Optional 객체를 리턴한다. 
+일반 스트림에서는 findFirst()와 결과가 같가지만 병렬 스트림에서는 
+findAny()를 써야 한다. 
+
+ex) 
+String [] strs = { "Hi", "C", "Java","Zoo","World"};
+Stream<String> fromArr = Arrays.stream(Strs);
+Optional<String> first = fromArr.findAny();
+System.out.println(first.orElse("none"));
+
 ----------------------------------------------------
 4.5 수집 
+
+collect()는 스트림의 요소들을 수집하는 최종 처리 메서드로 가장 유용하면서 
+활용도가 높고 그만큼 복잡한 메서드이다. collect()의 주요 목적은 필요한 요소만 
+골라서 새로운 컬렉션을 구성하는데 있다. 기본 스트림에서 요소를 고르기 때문에 
+reduce()와 유사하게 동작한다. collect()를 위해서 스트림에서 필요한 요소를 
+골라내는 방법을 정의할 필요가 있는데 이 역할은 Collector 타입의 객체가 담당한다. 
+
+ex) 수집 처리를 위한 Stream의 최종 처리 메서드 
+
+메서드 명 : 선언부와 설명 
+
+collect() : <R,A> R collect(Collector <? super T, A, R> collector)
+Collector 를 이용해서 스트림의 요소를 새로운 컬렉션 R에 담아 리턴한다. 
+
+<R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator,
+BiConsumer<R,R> combiner)
+supplier를 통해서 생성된 컨테이너 R에 accumulator를 이용해 T 값을 저장한다. 
+병렬처리 스트림에서 호출되는 경우만 combiner가 스레드별로 생성된 컨테이너 
+R을 통합해서 최종 컨테이너 객체를 완성한다. 
+
+Collector는 인터페이스로 타입 파라미터가 3개 선언돼 있는데 collect()의 
+동작을 이해 하기에 아주 중요한 요소들이다. 
+
+T : A 가 저장할 입력 값의 타입이다. 
+A : T를 입력받아서 처리하는 연산을 정의한다. 
+R : A에서 리턴된 값들이 저장되는 컬렉션으로 최종 결과값이다. 
+
+즉, T를 A가 받아서 R에 저장하는 형태이다. 
+
+(1) Collectors의 정적 메서드 활용 
+
+Collector 객체는 직접 생성할수도 있지만 대부분 Collectors가 제공하는 정적 
+메서드를 사용한다. 먼저 정적 메서드 기반으로 Collector를 사용하는 방법을 
+알아보자. 
+
+ex) Collector를 생성하기 위한 Collectros 의 정적 메서드 
+
+메서드 명 : 선언부와설명
+
+toList() : public static <T> Collector< T, ?, List<T>> toList()
+T 타입의 스트림 요소를 List<T>에 저장하는 Collector를 리턴한다. 
+
+toSet() : public static <T> Collector<T, ?, Set<T>> Collector<T,?,C>
+toCollection(Supplier<C> collectionFactory)
+T 타입의 스트림 요소를 collectionFactory가 제공한 Collection에 
+저장하는 Collector를 리턴한다. 
+
+toMap() : public static <T, K, U> Collection <T, ?, Map<K,U>>
+toMap(Function<? super T, ? extends K> keyMapper, Function<? super T, 
+? extends U> valueMapper)
+T 타입의 스트림 요소를 K와 U로 변환해서 K를 key, U를 value로 하는 
+Map에 저장하는 Collector를 리턴한다. 
+
+public static <T, K, U> Collector<T, ?, Map<K,U>>
+toMap(Function <? super T, ? extends K> keyMapper,
+Function<? super T, ? extends U> valueMapper, BinaryOperator<U> mergeFunction)
+T 타입의 스트림 요소를 K와 U로 변환해서 K를 key, U를 value로 하는 
+Map에 저장하는 Collector를 리턴한다. 이 때 key 가 중복된다면 
+mergeFunction에서 사용할 key를 선택한다. 
+
+public static <T, K, U, M extends Map<K, U>>
+Collector<T, ?, M > toMap(
+Function<? super T, ? extends K> keyMapper,
+Function<? super T, ? extends U> valueMapper,
+BinaryOperator<U> mergeFunction, Supplier<M> mapSupplier)
+
+T 타입의 스트림 요소를 K와 U로 변환해서 K를 key, U를 value로 
+하는 Map에 저장하는 Collector를 리턴 한다. 이 때 key가 중복된다면 
+mergeFunction에서 사용할 key를 선택한다. 최종적으로 리턴될 
+Map의 타입은 mapSupplier의 리턴 값을 사용한다. 
+
+toConcurrentMap() : public static <T, K, U> Collector <T, ?, ConcurrentMap<K,U>>
+toConcurrentMap(Function<? super T, ? extends K> keyMapper,
+Function<? super T, ? extens U> valueMapper)
+T 타입의 스트림 요소를 K와 U로 변환해서 K를 키, U를 value로 하는 
+ConcurrentMap에 저장하는 Collector를 리턴한다. 
+
+표를 보면 리턴 타입인 Collector의 두번째 타입 파라미터가 모두 '?'로 
+되어 있다. 이는 T를 R에 저장하는 방식을 이미 Collector가 알고 있어서 
+A가 필요없기 때문이다. 
+
+collect()를 이용해 스트림의 요소 중 filter()를 통과한 요소들만 List나 Set,
+Map으로 이동하는 예를 살펴보자. 
+
+ex)
+package ch16.terminate;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+public class CollectTest {
+
+	public static void main(String[] args) {
+		String[] strs = { "Hi", "C", "Java", "Zoo", "World" };
+
+		List<String> list = Arrays.stream(strs).filter(str -> {
+			return str.length() >= 3;
+		}).collect(Collectors.toList());
+		System.out.println(list.getClass().getName() + " : " + list);
+
+		Set<String> set = Arrays.stream(strs).filter(str -> {
+			return str.length() >= 3;
+		}).collect(Collectors.toSet());
+		System.out.println(set.getClass().getName() + " : " + set);
+
+		Map<String, Integer> map = Arrays.stream(strs).filter(str -> {
+			return str.length() >= 3;
+		}).collect(Collectors.toMap(str -> str, str -> str.length()));
+		System.out.println(map.getClass().getName() + " : " + map);
+
+		Map<String, Integer> map2 = Arrays.stream(strs).filter(str -> {
+			return str.length() >= 3;
+		}).collect(Collectors.toMap(str -> str, 
+									str -> str.length(), 
+									(oldVal, newVal) -> newVal, 
+									TreeMap::new));
+		System.out.println(map2.getClass().getName());//java.util.TreeMap
+	}
+}
+/*
+List<String> list2 = Arrays.stream(strs).filter(str -> {
+	return str.length() >= 3;
+}).collect(Collectors.toCollection(LinkedList::new));
+System.out.println(list2.getClass().getName());// java.util.LinkedList
+*/
+//
+java.util.ArrayList : [Java, Zoo, World]
+java.util.HashSet : [Java, Zoo, World]
+java.util.HashMap : {Java=4, Zoo=3, World=5}
+java.util.TreeMap
+
+665 26/42
+
 
 ----------------------------------------------------
 5. 병렬 스트림

@@ -24666,6 +24666,64 @@ java.util.TreeMap
 
 665 26/42
 
+스트림에서  filter()를 이용해 문자열의 길이가 3이상인 요소만 고른 후 
+collect()메서드를 이용해 List로 리턴받는다. 이 때 Collector로
+Collectors.toList()를 이용한다. 결과로 받은 List 는 ArrayList 타입이다. 
+
+위와 동일한 상황에서 Collector로 Collectors.toSet()을 이용해서 Set 형태로 리턴
+받는다. 기본적으로 HashSet 타입이 리턴된다. 
+
+Collector로 Collector.toMap() 메서드를 이용해서 Map 형태로 리턴 받는다. 
+toMap()의 첫번째 파라미터 Function은 String을 받아서 그대로 리턴하는데 
+이 값은 결과 Map의 key로 사용된다. 두 번째 파라미터 Function은 String을 
+받아서 그 문자열의 길이를 리턴하는데 이값은 결과 키값의 value로 사용된다. 
+결과로 리턴되는 Map 타입은 HashMap이다. 
+
+collect() 가 기본적으로 리턴하는 ArrayList 나 HashSet 을 사용하지 않고 
+다른 Collection을 사용하려는 경우는 Collector로 Collections.toCollection()
+메서드 결과를 사용한다. 
+
+다음의 코드는 ArrayList를 사용하는 대시 LinkedList를 사용하는 예이다. 
+
+ex)
+List<String> list2 = Arrays.stream(strs).filter(str -> {
+return str.length() >= 3;
+}).collect(Collectors.toCollection(LinkedList::new));
+System.out.println(list2.getClass().getName()); // java.util.LinkedList
+
+Map 계열에서는 표의 toMap() 메서드 중 세번째 toMap() 메서드를 사용하고 
+mapSupplier 파라미터에서 실제 사용할 Map 타입을 리턴하면된다. 
+toMap()의 세번째 파라미터 즉 mergeFunction인 BinaryOperator는 key에 
+동일한 값이 들어오는 경우 처리 방침을 정한다. 여기서는 새로운 newVal
+로 기존 값을 대체하도록 작성되었다. 네번째 파라미터 즉 
+mapSupplier 인 Supplier에서는 TreeMap 객체를 리턴하도록 작성되었다. 
+결과 collect()의 리턴 타입은 TreeMap이 되었다. 
+
+ex)
+Map<String, Integer> map2 = Arrays.stream(strs).filter(str -> {
+return str.length() >=3;
+}).collect(Collectors.toMap(str -> str. str -> str.length(),
+(oldVal,newVal) -> newVal, TreeMap::new)
+);
+System.out.println(map2.getClass().getName()); //java.util.TreeMap
+
+666 27/42
+
+(2) 집계를 위한 Collector 
+Collectors에는 앞서 살펴봤던 집계 처리를 위한 Collector를 반환하는 
+메서드들도 제공한다. 
+
+ex) 집계 기능의 Collector 를 생성하기 위한 Collectors 의 정적 메서드 
+
+메서등 명 : 선언부와설명
+
+counting() : public
+
+
+
+
+
+
 
 ----------------------------------------------------
 5. 병렬 스트림

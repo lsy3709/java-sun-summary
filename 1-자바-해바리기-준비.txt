@@ -24717,18 +24717,466 @@ ex) 집계 기능의 Collector 를 생성하기 위한 Collectors 의 정적 메
 
 메서등 명 : 선언부와설명
 
-counting() : public
+counting() : public static <T> Collector<T,?,Long> counting()
+스트림 요소의 개수를 Long 값으로 리턴하는 Collector를 리턴한다. 
 
+summingP#() : 
+public static <T> Collector<T, ?, W> summingP#(ToP#Function<? super T> mapper)
+스트림 요소의 합을 W로 리턴하는 Collector를 리턴한다. 
 
+averagingP#() :
+public static <T> Collector <T, ?, Double> averagingP#(ToP#Function<? super T> mapper)
+스트림 요소의 평균을 Double로 리턴하는 Collector를 리턴한다. 
 
+maxBy() :
+public static <T> Collector<T, ?, Optional<T>> maxBy(Comparator< ? super T> comparator)
+comparator에 의해 스트림 요소의 최대값을 Optional로 리턴하는 Collector를 리턴한다. 
 
+minBy() :
+public static <T> Collector<T, ?, Optional<T>> minBy(Comparator< ? super T> comparator)
+comparator에 의해 스트림 요소의 최대값을 Optional로 리턴하는 Collector를 리턴한다. 
 
+reducing() :
+public static <T> Collector <T, ? , Optional<T>> reducing(BinaryOperator<T> op)
+op 에 의한 리듀스 연산의 결과를 Optional로 리턴하는 Collector를 리턴한다. 
 
+P#는 Int, Long, Double 을 나타내며 W는 Integer, Long, Double 을 나타낸다. 
+
+중간 처리에서 있던 기능을 구지 최종 처리에서 다시 지원하는 것이 매우 불필요해 보이지만 
+이 메서드들은 뒤에 나오는 그룹화와 분리의 구현에 아주 주용한 역할을 한다. 
+
+앞서 한번씩 다루었던 개념의 메서드들이기 때문에 바로 사용 예를 살펴보자. 
+
+ex)
+package ch16.terminate;
+
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class AggregateCollectorTest {
+
+	public static void main(String[] args) {
+		long cnt = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+				.collect(Collectors.counting());
+		System.out.println("counting: " + cnt);
+
+		long sum = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+				.collect(Collectors.summingInt(n -> {
+					return n;
+				}));
+		System.out.println("summing: " + sum);
+
+		double avg = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+				.collect(Collectors.averagingInt(n -> {
+					return n;
+				}));
+		System.out.println("avg: " + avg);
+
+		Optional<Integer> maxBy = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+				.collect(Collectors.maxBy((a, b) -> {
+					return a == b ? 0 : (a > b ? 1 : -1);
+				}));
+		maxBy.ifPresent(val -> {
+			System.out.println("maxBy: " + val);
+		});
+
+		Optional<Integer> minBy = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+				.collect(Collectors.maxBy((a, b) -> {
+					return a == b ? 0 : (a > b ? -1 : 1);
+				}));
+		minBy.ifPresent(val -> {
+			System.out.println("minBy: " + val);
+		});
+
+		Optional<Integer> reduce = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+				.collect(Collectors.reducing((a, b) -> {
+					return a * b;
+				}));
+		reduce.ifPresent(val -> {
+			System.out.println("reduce: " + val);
+		});
+	}
+}
+//
+counting: 10
+summing: 55
+avg: 5.5
+maxBy: 10
+minBy: 1
+reduce: 3628800
+
+(3) 사용자 정의 Collector 활용 
+Collectors 의 메서드를 이용해서 Collector를 얻어서 사용하다 보면 
+지정된 컬렉션 클래스들만을 컨테이너로 사용할 수 있다. 
+이번에는 사용자 정의 컨테이너를 사용하는 Collector를 직접 만들어보자. 
+
+먼저, 사용자 정의 컨테이너를 작성한다. 이 컨테이너는 Properties를 내장하고 
+있어 필요할 때 파일로 내용을 쉽게 출력 할수 있다. 
+
+ex)
+package ch16.terminate;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Properties;
+
+public class MyContainer {
+	Properties prop = new Properties();
+
+	public void accumulate(String element) {
+		prop.setProperty(element, element.length() + "");
+	}
+
+	public void combine(MyContainer other) {
+		prop.putAll(other.prop);
+	}
+
+	public void saveToFile() {
+		try (FileWriter writer = new FileWriter("c:/Temp/fromStream.txt")) {
+			prop.store(writer, "from stream");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+// 자료가 저장될 Properties 타입의 prop을 선언한다. 
+
+String 을 파라미터로 받아서 prop에 저장한다. 
+이때 String을 key 로 하고 String 의 길이를 value로 한다. 
+
+멀티스레드로 동작할 때 다른 스레드가 사용한 MyContainer의 prop 내용을 
+통째로 추가한다. 
+
+prop의 내용을 파일로 출력한다. 
+
+이제 MyContainer를 사용하는 Connector를 구성할 차례인데 Stream 이 가지는 두 번째 
+connector() 메서드를 사용한다. 이를 위해 supplier , accumulator, combiner가 
+필요하다. 
+
+supplier는 connector() 결과가 담길 컨테이너를 공급하는 Supplier이다. 
+Supplier를 통해 새로운 MyContainer 객체를 리턴하면 된다. 
+
+ex)
+Supplier<MyContainer> con = () -> new MyContainer();
+
+accumulator는 컨테이너에 데이터를 저장할 로직을 BiConsumer 를 통해 
+작성한다. BiConsumer에는 컨테이너와 데이터가 파라미터로 전달된다. 
+NyContainer에 작성한 accumulate() 메서드를 사용하자. 
+
+ex)
+BiConsumer<MyContainer, String> accumulator = (container, element) -> {
+container.accumulate(element);};
+
+combiner는 병렬 스트림에서만 의미 있으며 여러 개의 스레드에 의해 사용되던 
+MyContainer의 데이터를 하나로 모으는 로직을 BiConsumer로 작성한다. 
+BiConsumer에는 두개의 컨테이너 객체가 파라미터로 전달된다. 
+MyContainer의 combine() 메서드를 이용하자. 
+
+ex)
+BiConsumer<MyContainer, MyContainer> combiner = (prop1, prop2) -> {
+prop1.combine(prop2);};
+
+다음 예는 스트림의 내용을 사용자 정의 컨테이너에 수집하는 방법을 보여준다. 
+
+ex)
+package ch16.terminate;
+
+import java.util.Arrays;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+
+public class CustomContainerTest {
+
+	public static void main(String[] args) {
+		String[] strs = { "Hi", "C", "Java", "Zoo", "World" };
+
+		Supplier<MyContainer> supplier = () -> new MyContainer();
+		
+		BiConsumer<MyContainer, String> accumulator = (container, element) -> {
+			container.accumulate(element);
+		};
+		BiConsumer<MyContainer, MyContainer> combiner = (prop1, prop2) -> {
+			prop1.combine(prop2);
+		};
+
+		MyContainer custom = Arrays.stream(strs).filter(str -> {
+			return str.length() >= 3;
+		}).collect(supplier, accumulator, combiner);
+		custom.saveToFile();
+	}
+}
+// C:\Temp 에 fromStream.txt 에 내용이 저장되었는지 확인한다. 
+
+collect() 메서드의 파라미터인 supplier, accumulator, combine을 생성한다. 
+
+스트림에서 filter()를 통과한 요소들을 collector() 메서드로 모은다. 이 때 
+리턴되는 컨테이너는 MyContainer 타입의 custom이다. 
+custom의 saveToFile()을 호출해서 파일에 스트림 내용을 저장한다. 
+
+(4) 그룹화(grouping) 와 분리(partitioning )
+Collectors에는 스트림 자료 활용에 도움이 되는 다양한 Collector를 리턴하는 메서드들이
+제공된다. 그 중 groupingBy()와 partitioningBy()는 가장 활용도가 높다고 할수 있다. 
+
+Collectors의 groupingBy() 와 partitioningBy() 
+
+메서드명 : 선언부와 설명 
+
+groupingBy() : public static <T,K> Collector <T, ?, Map<K, List<T>>>
+groupingBy(Function<? super T, ? extends K> classifier)
+classifier를 key 값으로, 그에 해당하는 값의 목록을 
+value로 갖는 Map으로 스트림을 수집하는 Collector를 반환한다. 
+값의 목록 타입은 List이다. 
+
+partitioningBy() : public static <T> Collector<T,?, Map<Boolean, List<T>>>
+partitioningBy(Predicate<? super T> predicate)
+predicate의 결과를 key로 , 그에 해당하는 값의 목록을 value로 갖는 
+Map으로 스트림을 수집하는 Collector를 반환한다. 값의 목록 타입은 
+List이다. 
+
+groupingBy() 는 스트림 요소를 특정 기준으로 그룹화 한다. partitioningBy()
+는 스트림의 요소를 특정 조건에 일치하는 그룹과 그렇지 찮은 그룹으로 분리한다.
+예를 들어 스트림에 전 세계의 도시가 있다고 생각해보자. 
+
+서울 : 대한민국, 광주: 대한민국, 부산 : 대한민국, 뉴욕: 미국, 하와이:미국 
+베이징: 중국 
+
+이 도시들을 국가별로 그룹화해보자. 
+
+대한민국 : [서울, 광주, 부산]
+미국 : [뉴욕, 하와이]
+중국: [베이징]
+
+결과는 국가명이 key이고 소속도시의 목록이 value인 Map<String, List<String>>
+구조가 된다. 
+이 도시들을 다시 아시아에 속한 도시와 그렇지 않은 도시로 분리해보자. 
+
+true : [서울, 광주, 부산, 베이징]
+false : [뉴욕, 하와이]
+
+결과는 true/ false가 key 이고 소속 도시의 목록이 value인 
+Map<Boolean, List<String>> 구조가 된다. 
+
+ex) groupingBy()와 partitioningBy() 의 결과 
+원본 스트림 
+서울 : 대한민국, 광주: 대한민국, 부산 : 대한민국, 뉴욕: 미국, 하와이:미국 
+베이징: 중국 
+
+groupingBy()
+대한민국 : [서울, 광주, 부산]
+미국 : [뉴욕, 하와이]
+중국: [베이징]
+
+partitioningBy
+아시아?
+true:[서울,광주,부산,베이징]
+false:[하와이, 뉴욕, 시카고]
+
+그룹화와 분리가 어떤 상황에서 필요한지 알아보자. 
+
+java.util.Locale 클래스는 언어코드_국가코드로 자바에서 사용하는 로케일 정보를 
+관리한다. 예를 들어 대한민국은 ko_KR, 미국은 en_US와 
+es_US, 중국은 zh_CN을 사용한다. 
+홍콩은 zh_HK를 사용한다. 미국의 경우 처럼 한 나라에 두개의 언어가 있기도 하고 
+중국이나 홍콩의 경우 처럼 여러 나라가 같은 언어를 사용하기도 한다. 
+
+Locale 클래스에는 getAvailableLocales()를 통해 Locale [] 타입으로 모든 
+로케일 정보를 반환한다.  이정보를 [국가-언어]의 구조로 Map에 저장해보자. 
+
+ex)
+Locale[] locales = Locale.getAvailableLocales();
+Map<String, String> langNames = Arrays.stream(locales)
+.filter(locate -> {
+return locate.getDisplayCountry().trim().length() > 0;
+})
+.collect(
+Collectors.toMap(
+locale -> {   //keyMapper : key 구성 
+retrun locale.getDisplayCountry() + "("+ locale.getCountry() + ")"; 
+},
+locale -> {  // valueMapper: value 구성 
+return locale.getDisplayLanguage()+"("+locate.getLanguage() + ")";
+},
+(oldOne, newOne) -> { //mergeFunction: 중복 처리 
+return newOne;
+}));
+System.out.println(langNames);
+
+실행 결과는 {라트비아(LV)=라트비아어(레트어)(lv), 이집트(EG)=아랍어(ar),
+벨라루스(BY)=벨로루시어(be),...}의 형식으로 로케일 정보가 출력된다. 
+하지만 그 중에서 중국어가 사용되는 나라를 출력하거나 비영어권의 국가를 
+찾는 일은 또다시 반복이나 새로운 스트림 작업을 거쳐야 한다. 
+
+이 때 그룹화와 분리 기능을 사용하면 간단히 문제를 해결할수 있다. 
+
+다음은 Locale 을 이용한 그룹화와 분리의 예이다. 
+
+ex)
+package ch16.terminate;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class GroupingTest {
+
+	public static void main(String[] args) {
+		Locale[] locales = Locale.getAvailableLocales();
+
+		Map<String, List<Locale>> langNames2 = Arrays.stream(locales).filter(locale -> {
+			return locale.getDisplayCountry().trim().length() > 0;
+		}).collect(Collectors.groupingBy(locale -> {
+			return locale.getLanguage();
+		}));
+		System.out.println("한국어가 사용되는 Locale는?");
+		langNames2.get("ko").stream().forEach(locale -> {
+			System.out.print("["+locale.getDisplayCountry()+"]");
+		});
+
+		Map<Boolean, List<Locale>> langNames3 = Arrays.stream(locales).filter(locale -> {
+			return locale.getDisplayCountry().trim().length() > 0;
+		}).collect(Collectors.partitioningBy(locale -> {
+			return locale.getLanguage().equals("ko");
+		}));
+		System.out.println("\n비 한국어 Locale의 수는?");
+		System.out.println(langNames3.get(false).stream().count()+"개");
+	}
+}
+/*
+Locale[] locales = Locale.getAvailableLocales();
+
+Map<String, String> langNames = Arrays.stream(locales)
+		.filter(locale -> {
+			return locale.getDisplayCountry().trim().length() > 0;
+		})
+		.collect(
+				Collectors.toMap(
+						locale -> {
+							return locale.getDisplayCountry() + "(" + locale.getCountry() + ")";
+						},
+						locale -> {
+							return locale.getDisplayLanguage() + "(" + locale.getLanguage() + ")";
+						},
+						(oldOne, newOne) -> {
+							return newOne;
+						}));
+System.out.println(langNames);
+ */
+ //
+한국어가 사용되는 Locale는?
+[북한][대한민국]
+비 한국어 Locale의 수는?
+524개
+
+//collect() 메서드에 groupingBy() 를 이용한 Collector를 전달한다. 
+이 Collector는 locale.getLanguage() 를 기준으로 Locale의 목록을 구룹화한다. 
+
+그룹화된 자료에서 키에 해당하는 언어 정보로 해당 Locale 의 국가명을 출력한다. 
+
+collect()메서드에 partitioningBy()를 이용한 Collector를 전달한다. 
+이 Collector는 Locale의 언어가 "ko"인지 아닌지를 기준으로 Locale의 목록을 분리한다. 
+
+분리된 자료에서 false로 등록된 한국어가 아닌 Locale의 개수를 출력 한다. 
+
+(5)다운스트림 컬레터(Downstream Collector)활용 
+다운스트림 컬렉터는 주 컬렉터가 만들어낸 결과를 다시 수집하는 일종의 보조 
+컬렉터이다. 앞서 학습한 groupingBy() 와 partitioningBy() 메서드는 두 번째 파라미터로 
+또 다른 Collectros를 받을 수 있는데 이것을 다운스트림 컬렉터라고 부른다. 
+
+ex) Collectors의 groupingBy()와 partitioningBy()에 다운스트림 컬렉터 적용 
+
+메서드명 : 선언부와설명
+
+groupingBy() :
+public static <T, K, A, D> Collector<T, ?, Map<K,D>>
+groupingBy(Function<? super T, ? extends K> classifier, Collector< ? super T, A, D>
+downStream)
+classifier를 key 값으로 , 그에 해당하는 값의 목록을 value로 갖는 Map으로 
+스트림을 수집하는 Collector를 반환한다. 값의 목록 타입은 
+Collector 인 downStream의 컨테이너 입니다. 
+
+partitioningBy():
+Collectors<T,?,Map<Boolean,D>>
+partitioningBy(Predicate<? super T> predicate, Collector<? super T, A, D>
+downStream)
+predicate의 결과를 key로, 그에 해당하는 값의 목록을 value로 갖는 
+Map으로 스트림을 수집하는 Collector를 반환한다. 값의 목록 타입은 
+Collector인 downStream의 컨테이너 타입이다. 
+
+다운스트림 컬렉터가 하는 역할을 생각해보자. 
+
+앞선 예제 ch16.terminate.GroupingTest.java에서 그룹화의 결과로 언어별 사용 국가를 
+Map<String, List<Locale>> 구조로 리턴받아서 사용했다. 
+다운 스트림의 컬렉터는 List<Locale>에 대한 부분을 변경한다. 
+
+예를 들어 List 구조가 아닌 Set 형태로 받고 싶다면 다음과 같이 toSet()을 이용할수 있다. 
+
+ex)
+Map<String, Set<Locale>> toSet = Arrays.stream(locales).filter(locale) ->
+{ return locale.getDisplayCountry().trim().length() > 0;
+}).collect(Collectors.groupingBy(locale -> {
+return locale.getLanguage();
+}, Collectors.toSet()
+
+언어별로 사용 국가 목록이 아닌 국가의 수를 알아보자. 
+List가 아닌 숫자를 리턴해주는 collectros 가 필요하다. 
+앞서 집계를 위한 Collector에서 봤던 counting()을 써보자. 
+
+ex)
+Map<String,Long> counting = Arrays.stream(locales).filter(locale) ->
+{ return locale.getDisplayCountry().trim().length() > 0;
+}).collect(Collectors.groupingBy(locale -> {
+return locale.getLanguage();
+}, Collectors.counting()
+));
+System.out.println(counting)
+// {de=5, no=2, hi=1, be=1,...)}
+
+MaxBy()를 이용하면 최대값을 구하는데 이를 통해 국가명이 가장 큰 
+(알파벳 뒤에 있는 Locale 만 남겨보자.
+
+ex)
+Map<Object,Optional<Locale>> maxLocale = Arrays.stream(locales).filter(locale) ->
+{ return locale.getDisplayCountry().trim().length() > 0;
+}).collect(Collectors.groupingBy(locale -> {
+return locale.getLanguage();
+}, Collectors.maxBy(
+(l1,l2)->{
+return l1.getDisplayCountry.compareTo(l2.getDisplayCountry());
+})
+));
+System.out.println(maxlocale)
+// {de=Optional[de_AT], no=Optional[no_NO_NY],...)}
+
+마지막으로 mapping()을 이용해서 Locale이 아닌 Locale의 
+displayCountry 로 값을 바꿔보자. 
+
+ex)
+Map<String,Optional<String>>mapping = Arrays.stream(locales).filter(locale) ->
+{ return locale.getDisplayCountry().trim().length() > 0;
+}).collect(Collectors.groupingBy(locale -> {
+return locale.getLanguage();
+}, Collectors.mapping(l -> l.getDisplayCountry(),
+Collectors.maxBy((n1,n2) ->{
+return n1.compareTo(n2)* -1;
+})
+)));
+System.out.println(mapping);
+// {de=Optional[그리스], no=Optional[노르웨이],hi=Optional[인도]...)}
 
 ----------------------------------------------------
 5. 병렬 스트림
 
 5.1 병렬 처리의 정의와 병렬 스트림 생성 
+
+병렬(Parallel)과 병행(Concurrent) 은 둘다 멀티스레드와 연관된 단어라는 공통점이 있지만,
+서로 다른 단어다. 병행 작업은 하나의 CPU 코어에서 멀티스레드가 번갈아 가며 
+수행되는 것을 말하고 병렬이란 멀티 코어 CPU 환경에서 코어 개수 만큼의  스레드들이
+각각의 코어에서 정말 동시에 작업이 이뤄지는 것을 말한다. 
+
+676 37/42
 
 ----------------------------------------------------
 5.2 병렬 스트림 사용
@@ -24738,5 +25186,22 @@ counting() : public
 
 ------------------------------------------------------
 [자바 커피 정리]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

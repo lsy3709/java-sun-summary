@@ -25178,11 +25178,169 @@ System.out.println(mapping);
 
 676 37/42
 
-----------------------------------------------------
-5.2 병렬 스트림 사용
+자바의 스트림은 병렬 스트림을 지원해서 대량의 벌크 데이터에 대한 작업을 손쉽게 
+해준다. 즉 병렬 스트림을 사용하면 별도의 스레드를 만들고 관리하지 않아도 자동으로 
+병렬 작업이 일어난다. 
+
+(1) 병렬 스트림 생성 
+컬렉션에서 병렬 스트림을 생성할 때는 stream() 메서드 대신 parallelStream() 
+메서드를 사용한다. 일부 parallelStream()을 지원하지 않는 경우는 순차 스트림을 만든 후 
+parallel() 메서드를 이용해 병렬 스트림으로 변경하면 된다. 
+
+ex)
+List<String> strList = Arrays.asList(strs);
+Stream<String> pStream2 = strList.parallelStream();
+
+String [] strs = { "Hello", "Java","World"};
+Stream<String> pStream = Arrays.stream(strs).parallel();
+
+5.2 병렬 스트림 사용. 
+
+병렬 스트림을 사용하면 최종 처리 메서드가 실행될 때 중간 처리 연산은 모두 
+병렬화 된다. 이때 ForkJoin 스레드 풀의 스레드를 이용해서 중간 처리 연산을 
+수행하고 이 스레드 들이 모두 완료되면 최종 처리가 동작한다. 
+
+다음 예는 문자열의 배열을 순차적 스트림과 병렬 스트림을 이용해서 중간 
+처리와 최종 처리를 실행한 것이다. 
+
+ex)
+package ch16.parallel;
+
+import java.util.Arrays;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+public class SequencialVsParallelTest {
+
+	public static void main(String[] args) {
+		String[] strs = { "Hello", "Java", "World" };
+		Predicate<String> pred = str -> {
+			System.out.println(Thread.currentThread().getName() + ":" + str);
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			return str.length() >= 4;
+		};
+
+		Stream<String> sStream = Arrays.stream(strs);
+		long cnt1 = sStream.filter(pred).count();
+		System.out.println("순차: " + cnt1);
+
+		Stream<String> pStream = Arrays.stream(strs).parallel();
+		long cnt2 = pStream.filter(pred).count();
+		System.out.println("병렬: " + cnt2);
+	}
+}
+//
+main:Hello
+main:Java
+main:World
+순차: 3
+main:Java
+ForkJoinPool.commonPool-worker-5:World
+ForkJoinPool.commonPool-worker-3:Hello
+병렬: 3
+
+//스트림 중간 연산에 사용될 Predicate를 생성한다. 구현부에는 실행 스레드의 
+이름과 처리 중인 데이터를 출력하고 문자열의 길이가 4이상인지를 리턴한다. 
+
+stream()을 이용해 순차 스트림을 만들고 filter()와 count() 연산을 수행한다. 
+출력 결과 Hello, Java, World 가 순서대로 처리 되었으며 실행 스레드는 
+main 임을 알수 있다. 
+
+parallel()을 이용해 병렬 스트림을 만들고 filter()와 count() 연산을 수행한다. 
+출력 결과 데이터의 순서대로 처리되지 않았으며 main 스레드와 함께 
+ForkJoinPool의 스레드들이 동작함을 확인할수 있다. 
+
+이처럼 병렬 스트림을 사용하면 스레드 관련된 코드 한 줄 없이 손쉽게 병렬 작업을 
+처리 할수 있다. 
+
+collect() 메서드는 스트림의 요소들을 다른 컬렉션으로 옮겨 담는 역할을 수행하는 
+최종 처리 메서드이다. 만약 병렬 스트림에서 이 collect ()가 수행된다면 여러 스레드에서 
+중간 처리한 내용을 합치는 과정이 필요하다. 
+이것을 결합자(combiner)라고 한다. 
+
+ch16.terminate.CustomContainerTest.java 예제를 통해 사용자 정의 Collector를 
+만들었는데 이때 사용된 3번째 파라미터가 combine이다. 기존의 예제는 순차 스트림을 
+이용했기 때문에 결합자가 무의미 했으며 병렬 스트림으로 변경 후 실행하면 비로소 
+결합자가 동작한다. 
+
+ex)
+
+Supplier<MyContainer> supplier = () -> new MyContainer();
+
+BiConsumer<MyContainer, String> accumulator = (container, element) ->{
+container.accumulate(element);
+};
+BiConsumer<MyContainer, MyContainer> combiner = (prop1, prop2) ->
+{prop1.combine(prop2);
+};
+
+MyContainer custom = Arrays.stream(strs).parallel().filter(Str -> {
+return str.length() >=3;
+}).collect(supplier, accumulator, combine);
 
 ----------------------------------------------------
 5.3 병렬 스트림 사용 시 주의점 
+
+(1) 공유 데이터 문제 
+병렬 스트림을 사용할 때 가장 주의 할점은 공유 데이터 문제이다. 
+스레드에 대한 언급이 전혀 없기 때문에 병렬 스트림이 멀티스레드로 동작한다는 점을 
+간과하고 공유 데이터를 중간 처리 메서드에서 사용하다 보면 데이터에 대한 신뢰도가 
+깨질수 있다. 
+
+ex)
+package ch16.parallel;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.IntStream;
+
+public class ParallelProblem {
+	private static void testCount(String type, IntStream ints) {
+		Map<String, Integer> dataMap = new HashMap<>();
+		dataMap.put("counter", 0);
+		int sum = ints.filter(num -> {
+			int i = dataMap.get("counter");
+			dataMap.put("counter", i + 1);
+			return num % 2 == 0;
+		}).sum();
+		System.out.println(type + "- 합:" + sum + ", 카운터: " + dataMap.get("counter"));
+	}
+
+	public static void main(String[] args) {
+		testCount("순차", IntStream.range(0, 1000));
+		testCount("병렬", IntStream.range(0, 1000).parallel());
+	}
+}
+//
+순차- 합:249500, 카운터: 1000
+병렬- 합:249500, 카운터: 680 //실행시 때론 카운터 값이 다름
+
+카운트 정보를 관리하기 위해 Map 타입의 dataMap 을 선언한다. 
+이 객체는 멀티스레드 공유 객체로 사용된다. 
+
+스트림에 중간 처리 연산 filter()와 최종 처리 연산 sum()을 적용시킨다. 
+중간 처리에서는 dataMap에서 counter를 가져오는 부분과 counter를 
+증가시켜 설정하는 부분이 있다. 
+
+0~999로 구성된 순차 스트림을 이용해 testCount()를 호출한다. 
+실행 결과 합과 카운터가 정확히 출력된다. 
+
+0~999로 구성된 병렬 스트림을 이용해 testCount()를 호출한다. 
+실행 결과 합은 정확하나  카운터 부정확하다. 
+
+(2) 성능이슈 
+성능은 문제까지는 아니지만, 병렬 스트림이 언제나 순차 스트림보다 
+빠르지는 않다는 점을 기억해 두자. 병렬 처리는 내부적으로 스레드 풀을 생성하고 
+스레드를 만들어서  동작 시키는 추가 비용이 발생한다. 
+따라서 컬렉션의 요소 수가 적고 처리 과정에는 걸리는 시간이 짧다면 
+오히려 순차 스트림이 빠를수 있다. 
+
+----------------------------------------------------
+
 
 ------------------------------------------------------
 [자바 커피 정리]

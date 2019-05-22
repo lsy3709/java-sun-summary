@@ -26915,8 +26915,11 @@ btnNewButton.addActionListener(new ActionListener() {
 
 3) 실행. 우클릭 -Run As - Java Application 클릭하여 
 프로그램을 실행 시킴. 
-
+-------------------------------------------------------------------------
 5. GUI 입력폼 만들기 
+
+504 24/36
+
 6. 이벤트 처리 2 
 
 

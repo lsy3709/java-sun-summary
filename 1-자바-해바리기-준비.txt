@@ -26920,20 +26920,316 @@ btnNewButton.addActionListener(new ActionListener() {
 
 504 24/36
 
+이름, 전화번호,  E-mail, 직업 정보를 입력받아 이벤트를 처리하는 프로그램을 
+만들어보자.
+
+1) 아래 그림처럼 GUI를 만들자. 
+
+기본 Layout으로 5행 1열의 GridLayout을 사용한다. 각 행에 JPanel 을 
+디자인하고, JPanel 의 Layout은 1행 2열로 구성되는 GridLayout을 사용한다. 
+1행 부터 4행까지는 각 행에 디자인된 JPanel의 1열에 JLabel을 디자인하고,
+2열에는 JTextField를 디자인한다.  5행에도 JPanel을 디자인하여 1행 2열로 
+구성되는 GridLayout을 사용하고, 각 열에는 JButton을 디자인하여 
+전체 UI를 디자인한다.
+UI 창에 디자인된 [SEND ] 버튼과 [CNACEL]버튼에 이벤트(ActionListener)를 
+등록하고 이벤트 처리(actionPerformed() 메소드) 코드를 입력한다. 
+
+1) 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_WB 생성. 
+ 패키지 : ch15.wb
+ 클래스 이름 : Wb_Ex2
+
+package ch15.wb2;
+import javax.swing.JFrame;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.border.LineBorder;
+import java.awt.Color;
+import javax.swing.JTextField;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+public class Wb_Ex2 extends JFrame{ //JFrame 을 상속하는 클래스 정의
+	private JTextField nameField; // 4개의 JTextField 객체 선언 
+	private JTextField telField;
+	private JTextField emailField;
+	private JTextField jobField;
+	public Wb_Ex2() { // 생성자 정의 
+		setVisible(true); // 창이 보이도록 설정 
+		setTitle("Wb_Ex2"); //창의 제목 설정
+		getContentPane().setSize(new Dimension(250, 300)); // 창의 크기 설정 
+		getContentPane().setLayout(new GridLayout(5, 1, 0, 0));
+		//창의 기본 레이아웃 설정 
+		
+		JPanel namePanel = new JPanel(); //JPanel 객체 생성
+		namePanel.setBorder(new LineBorder(new Color(0, 0, 0)));
+		namePanel.setName("namePanel");
+		getContentPane().add(namePanel); //JPanel 객체를 창에 추가 
+		namePanel.setLayout(new GridLayout(1, 2, 0, 0));
+		// JPanel 객체의 레이아웃 설정 
+		
+		JLabel nameLabel = new JLabel("이름");  // JLabel 객체 생성 
+		namePanel.add(nameLabel); // JLabel 객체를 JPanel에 추가 
+		
+		nameField = new JTextField(); //JTextField 객체 생성
+		namePanel.add(nameField); //JTextField 객체를 JPanel에 추가 
+		nameField.setColumns(10); // JTextField에서 입력 글자 수를 10자로 설정 
+		
+		JPanel telPanel = new JPanel(); //전화번호를 위한 영역 설정. 
+		telPanel.setName("telPanel");
+		telPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
+		getContentPane().add(telPanel);
+		telPanel.setLayout(new GridLayout(1, 2, 0, 0));
+		
+		JLabel telLabel = new JLabel("전화번호");
+		telPanel.add(telLabel);
+		
+		telField = new JTextField();
+		telField.setColumns(10);
+		telPanel.add(telField);
+		
+		JPanel emailPanel = new JPanel(); //email 주소를 위한 영역 설정. 
+		emailPanel.setName("emailPanel");
+		emailPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
+		getContentPane().add(emailPanel);
+		emailPanel.setLayout(new GridLayout(1, 2, 0, 0));
+		
+		JLabel emailLabel = new JLabel("E-mail");
+		emailPanel.add(emailLabel);
+		
+		emailField = new JTextField();
+		emailField.setColumns(10);
+		emailPanel.add(emailField);
+		
+		JPanel jobPanel = new JPanel(); //직업을 위한 영역 설정. 
+		jobPanel.setName("jobPanel");
+		jobPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
+		getContentPane().add(jobPanel);
+		jobPanel.setLayout(new GridLayout(1, 2, 0, 0));
+		
+		JLabel jobLabel = new JLabel("직업");
+		jobPanel.add(jobLabel);
+		
+		jobField = new JTextField();
+		jobField.setColumns(10);
+		jobPanel.add(jobField);
+		
+		JPanel btnPanel = new JPanel();
+		//버튼을 디자인하기 위한 JPanel 객체 생성 
+		btnPanel.setName("btnPanel");
+		getContentPane().add(btnPanel); //JPanel 객체를 창에 붙이기 
+		btnPanel.setLayout(new GridLayout(1, 2, 0, 0));
+		// JPanel 객체의 레이아웃 설정 
+		
+		JButton btnSend = new JButton("SEND");
+		// [SEND ] 버튼을 위한 JButton 객체 생성 
+		btnSend.addActionListener(new ActionListener() {
+		// JButton 객체에 이벤트 처리기 추가 
+			public void actionPerformed(ActionEvent e) {
+			// [SEND] 버튼을 클릭했을 때 이벤트 처리 내용 
+ 				System.out.println(nameField.getText());
+				// JTextField 객체에 입력된 내용을 콘솔에 출력 
+				System.out.println(telField.getText());
+				System.out.println(emailField.getText());
+				System.out.println(jobField.getText());
+			}
+		});
+		btnPanel.add(btnSend); //JButton 을 JPanel에 붙이기 
+		
+		JButton btnCancel = new JButton("CANCEL");
+		// [CANCEL ] 버튼을 위한 JButton 객체 생성 
+		btnCancel.addActionListener(new ActionListener() {
+		// JButton 객체에 이벤트 처리기 추가 
+			public void actionPerformed(ActionEvent e) {
+			// [CANCEL] 버튼을 클릭했을 때 이벤트 처리 내용 
+				nameField.setText("");
+				// JTextField 객체의 내용을 삭제 
+				telField.setText("");
+				emailField.setText("");
+				jobField.setText("");
+			}
+		});
+		btnPanel.add(btnCancel);
+	}
+public static void main(String[] args) {
+	System.out.println("Window Builder Test");
+	new Wb_Ex2();
+}
+}
+
 6. 이벤트 처리 2 
 
+1) 클래스 이름은 
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_WB 생성. 
+ 패키지 : ch15.wb
+ 클래스 이름 : Wb_Ex3
+ 
+추가된 새 클래스의 코드에서 JFrame 클래스를 상속하도록 클래스 정의를 
+수정하여 저장한 뒤에, 윈도우 빌더를 사용할수 있도록 한다. 
+
+윈도우 빌더를 사용할 때 이클립스 창의 왼쪽에서 [Components]창의 노드 구조와
+이클립스 창의 오른쪽에 보이는 미리보기 화면을 보면서 다음 그림과 같은 화면을 
+디자인한다. 
+
+기본 Layout은 1행 1열로 구성되는 GridLayout을 사용한다. 
+이곳에 JTabbedPane을 디자인한다. 디자인된 JTabbedPane에 JPanel과 
+JScrollPane을 추가한다. JPanel에는 Flowlayout을 설정하고, 
+JScrollPane에는 JTable 컴포넌트를 추가한다. 
+
+디자인된 JPanel에는 2개의 JRadioButton과 한개의 JSpinner 컴포넌트를 
+디자인한다. 
+
+2)"남" ,"여" 를 선택하는 라디오 버튼은 다음 그림처럼 "buttonGroup" 컴포넌트를 
+이용하여 버튼 그룹으로 묶어 주어야 한다. 
+[Components] 창에서 키보드 (Ctrl 키) 와 마우스를 이용하여 두개의 JRadioButton객체를 
+선택하고, 선택된 컴포넌트에서 마우스 오른쪽 버튼을 클릭하면 표시되는 단축메뉴에서
+[Set ButtonGroup] ->[buttonGroup ] 메뉴를 클릭한다. 
+
+3) 라디오 버튼도 이벤트 처리 1에서 처럼 각각 라디오 버튼 컴포넌트를 마우스 오른쪽 
+버튼으로 클릭하여 표시되는 단축 메뉴에서 
+[Add event handler]- [action]-[actionPerformed]를 선택하여 이벤트 처리 코드를 
+입력한다. 
+
+코드 예제)
+
+JRadioButton rdbtnX = new JRadioButton("남");
+		rdbtnX.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println(rdbtnX.getText());
+			}
+		});
+		buttonGroup.add(rdbtnX);
+		panel.add(rdbtnX);
+		
+		JRadioButton rdbtnY = new JRadioButton("여");
+		rdbtnY.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println(rdbtnY.getText());
+			}
+		});
+		buttonGroup.add(rdbtnY);
+		panel.add(rdbtnY);
+
+4) JSpinner를 추가한 후 다음 그림처럼 스피너 컴포넌트에서 선택할수 있는 
+목록을 변경할수 있다. JSpinner 컴포넌트의  model 속성에서 [...]
+버튼을 클릭하면 편집할수 있다. 
+
+예)
+List  탭에서 
+통신사
+KT 
+SKT 
+추가하기. 
+
+JSpinner 컴포넌트의 이벤트 처리는 다음 그림처럼 stateChanged 이벤트를 
+처리하도록 한다. 
+
+ex)
+JSpinner spinner = new JSpinner();
+		spinner.addChangeListener(new ChangeListener() { //이부분
+			public void stateChanged(ChangeEvent e) {//이부분
+				System.out.println(spinner.getValue());//이부분
+			} //이부분
+		});
+		spinner.setModel(new SpinnerListModel(new String[] {"\uD1B5\uC2E0\uC0AC", "KT", "SKT"}));
+		panel.add(spinner);
+
+5 데이터를 표형식으로 표현하는 JTable  도 아래 그림처럼 추가해보자. 
+JTable 데이터 행의 길이가 화면 높이보다 크면 JScrollPane을 먼저 추가한 후 
+그 안에 JTable을 넣는다. 
+
+6 JTable 의 이벤트는 mouseClicked()  메소드를 정의하여 처리한다. 
+
+table.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				System.out.println("선택한 행번호:"+table.getSelectedRows());
+			}
+		});
 
 
+전체 
+package ch15.wb2;
+import javax.swing.JFrame;
+import java.awt.GridLayout;
+import javax.swing.JTabbedPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JSpinner;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ButtonGroup;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.SpinnerListModel;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.table.DefaultTableModel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
+public class Wb_Ex3 extends JFrame{
+	public static void main(String[] args) {
+		new Wb_Ex3();
+	}
+	private final ButtonGroup buttonGroup = new ButtonGroup();
+	private JTable table;
+	public Wb_Ex3() {		
+	    setVisible(true); // 창이 보이도록 설정 
+		setTitle("Wb_Ex3\r\n");
+		getContentPane().setLayout(new GridLayout(1, 1, 0, 0));
+		
+		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		getContentPane().add(tabbedPane);
+		
+		JPanel panel = new JPanel();
+		tabbedPane.addTab("선택화면 탭\r\n", null, panel, null);
+		
+		JRadioButton rdbtnX = new JRadioButton("남\r\n");
+		rdbtnX.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println(rdbtnX.getText());
+			}
+		});
+		buttonGroup.add(rdbtnX);
+		panel.add(rdbtnX);
+		
+		JRadioButton rdbtnY = new JRadioButton("여\r\n");
+		rdbtnY.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println(rdbtnY.getText());
+			}
+		});
+		buttonGroup.add(rdbtnY);
+		panel.add(rdbtnY);
+		
+		JSpinner spinner = new JSpinner();
+		spinner.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				System.out.println(spinner.getValue());
+			}
+		});
+		spinner.setModel(new SpinnerListModel(new String[] {"\uD1B5\uC2E0\uC0AC", "KT", "SKT"}));
+		panel.add(spinner);
+		
+		table = new JTable();
+		table.setModel(new DefaultTableModel(
+			new Object[][] {
+				{"1", "email1", "1234"},
+				{"2", "email2", "1234"},
+				{"3", "email3", "1234"},
+			},
+			new String[] {
+				"New column", "New column", "New column"
+			}
+		));
+		tabbedPane.addTab("테이블 탭", null, table, null);
+	}
 
-
-
-
-
-
-
-
-
+}
 
 
 

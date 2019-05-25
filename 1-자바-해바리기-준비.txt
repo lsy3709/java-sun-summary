@@ -27231,6 +27231,7 @@ public class Wb_Ex3 extends JFrame{
 
 }
 518 2/11
+람다 표현식 
 
 람다 표현식을 사용하면 복잡한 메소드들을 나열하지 않아도 계산을 간결한 
 코드 조각(함수이름없음)으로 처리하는 함수형 프로그래밍이 가능하다. 
@@ -27660,11 +27661,65 @@ UDP는 TCP 처럼 연결 상태가 아닌 일방적으로 상대방에서 정보
 
 532 4/21
 
+이렇게 서버 프로그램과 클라이언트 프로그램은 각각 사용하는 소켓을 연결함으로써 
+하나의 논리적인 채널을 생성하고 이를 이용하여 데이터를 입출력한다. 
+
+포트 번호 중에서 0부터 1,023 사이의 번호는 시스템에서 사용하도록 예약되어 
+있으며, 1,024 부터 65,536 까지의 포트번호는 사용자가 임의로 사용 할수 있다. 
+
+대표적인 시스템이 예약한 포트 번호. 
+FTP 21, TELNET 23, SMTP 25 , HTTP 80 
+
+-------------------------------------------------------
+2 InetAddress 클래스 
+
+자바에서 IP 주소를 사용할 수 있는 기능을 제공하는 클래스이다. 
+다음은 주요 메소드이다. 
+
+메소드 : 설명 
+getAddress() : InetAddress 클래스가 가지고 있는 IP 주소의 byte 배열을 얻는다. 
+
+getHostAddress() : IP 주소를 문자열로 나타낸다. 
+
+getHostName() : 객체가 가지는 호스트 이름을 문자열로 나타낸다. 
+
+getByName(String host) : 주어진 이름을 갖는 호스트의 IP 주소를 얻는다. 
+
+getAllByName(String host) : 주어진 이름을 갖는 호스트의 IP 주소들를 얻는다. 
+
+getLocalhost() : 현재 시스템의 호스트 IP 주소를 얻는다. 
+
+----------------
+17-1 InetAddress 클래스 사용하기 
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex1
+ 
+public static void main(String [] args) {
+try {
+String name = "www.google.co.kr";
+InetAddress inetAddr = InetAddress.getByName(name);
+String hostName = inetAddr.getHostName();
+String hostAddress = inetAddr.getHostAddress();
+System.out.println(hostName + "" + hostAddress);
+
+InetAddress localHost = InetAddress.getLocalHost();
+String localName = localHost.getHostName();
+String localAddress = localHost.getHostAddress();
+System.out.println(localName + "" + localAddress);
+
+byte [] b = localHost.getAddress();
+for ( int x =0; x < b.length ; x++){
+System.out.print(((b[x] < 0 ) ? (b[x] + 255) : b[x] )+ ".");
+}
+}catch (Exception e) { e.printStackTrace();}
+}
+}
 
 
-
-
-
+533 5/21
 
 
 

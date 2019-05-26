@@ -18839,7 +18839,7 @@ load() : public synchronized void load(Reader reader)
 throws IOException
 reader를 이용해 속성을 읽어온다. 
 
-loadFromXML() : public synchronized void loadFromXML(InpuStream in)
+loadFromXML() : public synchronized void loadFromXML(InputStream in)
 throws IOException, InvalidPropertiesFormatException 
 in 을 이용해서 XML 형태로 저장된 속성을 읽어온다. 
 
@@ -21006,7 +21006,7 @@ ex)
 노드의 종류 
 키보드, 모니터, 메모리, 파일, 데이터베이스, 네트워크 ...
 
-노드 -> keyboard 입력스트림: InpuStream, Reader-> Program 
+노드 -> keyboard 입력스트림: InputStream, Reader-> Program 
 Program -> 출력스트림 : OutputStream, Writer -> monitor 
 
 (1)노드 스트림의 종류 
@@ -21027,11 +21027,11 @@ byte 스트림으로 전송할 때 문자열이 깨지는 문제가 발생할 �
 좋다. 
 
 두번째 기준은 데이터의 이동 방향이다. 데이터를 읽어 들이면 
-InpuStream 또는 Reader, 출력하면 OutputStream 또는 Writer
+InputStream 또는 Reader, 출력하면 OutputStream 또는 Writer
 가 된다. 
 
 다음은 연결되는 노드의 타입이다. 노드 중 키보드와 모니터는 단방향이다. 
-즉 키보드는 InpuStream 또는 Reader만 연결이 가능하고, 모니터는 
+즉 키보드는 InputStream 또는 Reader만 연결이 가능하고, 모니터는 
 OutputStream 이나 Writer가 연결된다. 다른 노드들은 일반적으로
 양방향인데 파일과 연결할 때는 File, 다른 스레드와 연결에는 Piped, 
 메모리를 이용할 때는 Array가 사용된다. Array는 저장할 데이터의 
@@ -21077,7 +21077,7 @@ PipedInputStream, PipedOutputStream
 2. 노드 스트림
 
 모든 스트림은 노드 스트림에서 시작하며 노드 스트림들의 최상위 
-인터페이스는 키보드에 연결되는 InpuStream과 Reader, 
+인터페이스는 키보드에 연결되는 InputStream과 Reader, 
 모니터에 연결되는 OutputStream과 Writer이다. 
 나머지 노드 스트림들은 노드만 변경될뿐 사용법은 동일하다. 
 
@@ -21087,9 +21087,9 @@ PipedInputStream, PipedOutputStream
 
 먼저 데이터를 읽는 InputStream과 Reader에 대해서 알아보자. 
 
-다음은 InpuStream의 주요 메서드이다. 
+다음은 InputStream의 주요 메서드이다. 
 
-InpuStream의 주요 메서드 
+InputStream의 주요 메서드 
 
 메서드 명 : 선언부와 설명 
 
@@ -21128,7 +21128,7 @@ read()는 하나의 바이트를 읽어서 리턴하는데 이상하게도 리�
 byte 가 아니라 int 이다.  하지만 실상은 int의 맨뒤 8 bit에만 
 실제로 데이터가 저장된다. 이 메서드의 읽은 결과가 -1 이면 
 더 이상 읽을 데이터가 없음을 의미한다. 
-다음 코드는 System 의 in 을 통해 InpuStream을 얻어서 사용하는 예이다. 
+다음 코드는 System 의 in 을 통해 InputStream을 얻어서 사용하는 예이다. 
 
 ex)
 package ch15.node.basic;
@@ -21230,7 +21230,7 @@ buffer를 이용해서 10개씩 데이터를 읽어온다. 이 때 read()의 리
 
 buffer에서 읽은 byte의 개수만큼 이용해서 String을 생성후 출력한다. 
 
-하지만 InpuStream은 byte 단위의 전송이 이뤄지기 때문에 한 글자 2byte 이상으로 
+하지만 InputStream은 byte 단위의 전송이 이뤄지기 때문에 한 글자 2byte 이상으로 
 이루어진 경우 처리가 어렵다. 위의 예제에서 한글을 입력하고 테스트 해보자. 
 
 서준아 안녕 아빠야
@@ -21246,7 +21246,7 @@ buffer에서 읽은 byte의 개수만큼 이용해서 String을 생성후 출력
 맨 마지막 1byte 때문에 깨지는 문제가 발생한다. 따라서 전송될 
 데이터가 문자일 경우는 char 단위의 Reader를 사용하는 것이 좋다. 
 
-Reader 에서 제공되는 메서드들은 대부분 InpuStream의 메서드와 유사하다. 
+Reader 에서 제공되는 메서드들은 대부분 InputStream의 메서드와 유사하다. 
 전반적으로 byte 가 char로 대체되는 형태이다. 
 
 593 7/53
@@ -22073,7 +22073,7 @@ InputStreamReader() : public InputStreamReader(InputStream in)
 기본 캐릭터셋을 이용해서 InputStreamReader를 생성한다. 
 
 public InputStreamReader(
-InpuStream in , String charsetName) throws UnsupportedEncodingException
+InputStream in , String charsetName) throws UnsupportedEncodingException
 charsetName을 이용해 InputStreamReader를 생성한다. 
 
 public InputStreamReader(InputStream in , Charset cs)
@@ -22123,7 +22123,7 @@ public BufferedInputStream(InputStream in)
 in 을 이용해 크기가 8192 인 버퍼를 갖는 
 BufferedInputStream을 생성한다. 
 
-public BufferedInputStream(InpuStream in , int size)
+public BufferedInputStream(InputStream in , int size)
 in을 이용해 크기가 size인 버퍼를 갖는 BufferedInputStream을 생성한다. 
 
 BufferedOutputStream():
@@ -22799,7 +22799,7 @@ Files 의 주요 메서드
 메서드 명 : 선언부와설명
 
 newInputStream() 
-:public static InpuStream newInputStream(Path path, OpenOption...options)
+:public static InputStream newInputStream(Path path, OpenOption...options)
 throws IOException
 path 와 연결된 InputStream을 리턴한다. 
 
@@ -26733,7 +26733,7 @@ JTabbedPane : 설정된 타이틀이나 아이콘 탭을 클릭하여 사용자�
 
 6) 
 좌측 상단의 Components 창에서 
-javax.swing.JFrame - getContentPane() 항목을 클릭 하면 
+javax.swing.JFrame - getContenttPane() 항목을 클릭 하면 
 GUI  창의 레이아웃을 변경할수 있다. 
 여기서는 기본 레이아웃(BoarderLayout)을 사용. 
 클릭하고 오른쪽으로 클릭. 
@@ -26781,10 +26781,10 @@ import java.awt.GridLayout;
 import javax.swing.JButton;
 public class Wb_Ex1 extends JFrame {
 	public Wb_Ex1() {
-		getContentPane().setLayout(new BorderLayout(0, 0));
+		getContenttPane().setLayout(new BorderLayout(0, 0));
 		
 		JButton btnNewButton = new JButton("North");
-		getContentPane().add(btnNewButton, BorderLayout.NORTH);
+		getContenttPane().add(btnNewButton, BorderLayout.NORTH);
 	}
 
 	public static void main(String[] args) {
@@ -26959,14 +26959,14 @@ public class Wb_Ex2 extends JFrame{ //JFrame 을 상속하는 클래스 정의
 	public Wb_Ex2() { // 생성자 정의 
 		setVisible(true); // 창이 보이도록 설정 
 		setTitle("Wb_Ex2"); //창의 제목 설정
-		getContentPane().setSize(new Dimension(250, 300)); // 창의 크기 설정 
-		getContentPane().setLayout(new GridLayout(5, 1, 0, 0));
+		getContenttPane().setSize(new Dimension(250, 300)); // 창의 크기 설정 
+		getContenttPane().setLayout(new GridLayout(5, 1, 0, 0));
 		//창의 기본 레이아웃 설정 
 		
 		JPanel namePanel = new JPanel(); //JPanel 객체 생성
 		namePanel.setBorder(new LineBorder(new Color(0, 0, 0)));
 		namePanel.setName("namePanel");
-		getContentPane().add(namePanel); //JPanel 객체를 창에 추가 
+		getContenttPane().add(namePanel); //JPanel 객체를 창에 추가 
 		namePanel.setLayout(new GridLayout(1, 2, 0, 0));
 		// JPanel 객체의 레이아웃 설정 
 		
@@ -26980,7 +26980,7 @@ public class Wb_Ex2 extends JFrame{ //JFrame 을 상속하는 클래스 정의
 		JPanel telPanel = new JPanel(); //전화번호를 위한 영역 설정. 
 		telPanel.setName("telPanel");
 		telPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		getContentPane().add(telPanel);
+		getContenttPane().add(telPanel);
 		telPanel.setLayout(new GridLayout(1, 2, 0, 0));
 		
 		JLabel telLabel = new JLabel("전화번호");
@@ -26993,7 +26993,7 @@ public class Wb_Ex2 extends JFrame{ //JFrame 을 상속하는 클래스 정의
 		JPanel emailPanel = new JPanel(); //email 주소를 위한 영역 설정. 
 		emailPanel.setName("emailPanel");
 		emailPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		getContentPane().add(emailPanel);
+		getContenttPane().add(emailPanel);
 		emailPanel.setLayout(new GridLayout(1, 2, 0, 0));
 		
 		JLabel emailLabel = new JLabel("E-mail");
@@ -27006,7 +27006,7 @@ public class Wb_Ex2 extends JFrame{ //JFrame 을 상속하는 클래스 정의
 		JPanel jobPanel = new JPanel(); //직업을 위한 영역 설정. 
 		jobPanel.setName("jobPanel");
 		jobPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		getContentPane().add(jobPanel);
+		getContenttPane().add(jobPanel);
 		jobPanel.setLayout(new GridLayout(1, 2, 0, 0));
 		
 		JLabel jobLabel = new JLabel("직업");
@@ -27019,7 +27019,7 @@ public class Wb_Ex2 extends JFrame{ //JFrame 을 상속하는 클래스 정의
 		JPanel btnPanel = new JPanel();
 		//버튼을 디자인하기 위한 JPanel 객체 생성 
 		btnPanel.setName("btnPanel");
-		getContentPane().add(btnPanel); //JPanel 객체를 창에 붙이기 
+		getContenttPane().add(btnPanel); //JPanel 객체를 창에 붙이기 
 		btnPanel.setLayout(new GridLayout(1, 2, 0, 0));
 		// JPanel 객체의 레이아웃 설정 
 		
@@ -27180,10 +27180,10 @@ public class Wb_Ex3 extends JFrame{
 	public Wb_Ex3() {		
 	    setVisible(true); // 창이 보이도록 설정 
 		setTitle("Wb_Ex3\r\n");
-		getContentPane().setLayout(new GridLayout(1, 1, 0, 0));
+		getContenttPane().setLayout(new GridLayout(1, 1, 0, 0));
 		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		getContentPane().add(tabbedPane);
+		getContenttPane().add(tabbedPane);
 		
 		JPanel panel = new JPanel();
 		tabbedPane.addTab("선택화면 탭\r\n", null, panel, null);
@@ -27697,29 +27697,270 @@ getLocalhost() : 현재 시스템의 호스트 IP 주소를 얻는다.
  패키지 : ch17.Network
  클래스 이름 : Network_ex1
  
+import java.net.InetAddress;
+public class Network_ex1 {
 public static void main(String [] args) {
 try {
 String name = "www.google.co.kr";
+// 요청하고자 하는 도메인명을  String에 저장한다.
+
 InetAddress inetAddr = InetAddress.getByName(name);
+// 요청 도메인에 대한 정보를 가진 InetAddress 클래스를 얻어온다.
+
 String hostName = inetAddr.getHostName();
 String hostAddress = inetAddr.getHostAddress();
 System.out.println(hostName + "" + hostAddress);
+//getHostName() 메소드와 getHostAddress() 메소드를 사용하여 호스트명과 
+//호스트 주소를 얻는다. 
 
 InetAddress localHost = InetAddress.getLocalHost();
+//로컬(현재 자신의 컴퓨터) 컴퓨터의 네트워크 정보를 얻기 위해서 
+//getLocalHost() 메소드를 호출한다. 
+
+
 String localName = localHost.getHostName();
 String localAddress = localHost.getHostAddress();
 System.out.println(localName + "" + localAddress);
+//로컬의 호스트명과 호스트 주소를 얻는다. 
 
 byte [] b = localHost.getAddress();
+// 로컬의 호스트 주소를 byte 배열로 얻는다. 
+//자바의 byte 값은 -128~ 127 값을 갖게 되므로 
+// 0~255 사이 값으로 변환해야 한다.
+// 음수일 때 변환 작업 수행. 
+
+
 for ( int x =0; x < b.length ; x++){
 System.out.print(((b[x] < 0 ) ? (b[x] + 255) : b[x] )+ ".");
 }
 }catch (Exception e) { e.printStackTrace();}
 }
 }
+//pc 마다 다름 
+www.google.co.kr 172.217.25.227
+itwill 192.168.56.1
+191.167.56.1.
 
 
 533 5/21
+
+URL 클래스 
+
+URL 클래스는 Uniform Resource Locator 의 약자로서 World Wide Web 
+(일반적으로 웹(web)으로 부름)상의 '자원'들을 
+사용하기 위한 포인터 역학을 하는 클래스이다.
+
+여기서 자원은 파일, 디렉토리 또는 데이터베이스의 Query와 다양한 
+형식의 객체가 될수 있다. 
+
+URL 은 형식 
+http://www.abc.co.kr:80/network/index.html 
+- http를 protocol이라고 한다. 
+- www.abc.co.kr 을 host 라고 한다. 
+- 80 을 port 번호라고 한다. 
+- network/index.html 을 path 라고 한다. 
+
+실습하기 17-2 
+URL 클래스 사용하기 
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex2
+ 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+
+public class Network_ex2 {
+public static void main(String[] args) {
+
+BufferedReader buffer = null;
+try {
+URL url = new URL("http://www.naver.com");
+//요청한 도메인의 위치를 얻기 위해서 해당 
+//도메인을 인자로 하여 URL 객체를 생성한다. 
+
+InputStream in = url.openStream();
+// URL 객체로부터 InputStream 객체를 얻기 위해서 openStream()
+//메소드를 호출한다. 
+
+InputStreamReader reader = new InputStreamReader(in);
+buffer = new BufferedReader(reader);
+String s = buffer.readLine();
+while(s != null){
+System.out.println(s);
+s = buffer.readLine();
+}// end while
+// Filter 계열의 InputStreamReader 와 BufferedReader 클래스를 
+// 이용하여 요청 도메인 (www.naver.com)의 기본 (홈페이지) 
+//파일을 읽어, 해당 파일의 내용인 HTML 정보를 콘솔에 출력한다. 
+
+}catch(Exception e) {
+e.printStackTrace();
+}finally{
+try {
+buffer.close();
+}catch(IOException e) {
+e.printStackTrace();
+}
+}
+}
+}
+
+//
+<html>
+<head><title>302 Found</title></head>
+<body bgcolor="white">
+<center><h1>302 Found</h1></center>
+<hr><center> NWS </center>
+</body>
+</html>
+
+실습하기 17-3 
+URL 클래스 메타 정보 출력하기 
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex3
+ 
+import java.net.URL; 
+
+public class Network_ex3 {
+try {
+URL url = new URL("http://www.google.co.kr/index.html");
+//요청한 도메인의 위치를 얻기 위해서, 해당 도메인을 인자로 하여 
+//URL 객체를 생성한다. 
+
+System.out.println(url.getProtocol());
+//요청한 도메인의 프로토콜 정보를 얻기 위해서 getProtocol() 메소드를 호출.
+
+System.out.println(url.getDefaultPort());
+//요청한 도메인의 기본 포트 정보를 얻기 위해서 getDefaultPort() 메소드를 호출.
+
+System.out.println(url.getHost());
+//요청한 도메인의 호스트 정보를 얻기 위해서 getHost() 메소드를 호출한다. 
+
+System.out.println(url.getFile());
+// 요청한 파일 자원의 정보를 얻기 위해서 getFile() 메소드를 호출한다. 
+
+}catch(Exception e){
+e.printStackTrace();
+}
+}
+}
+
+//
+http
+80
+www.google.co.kr
+/index.html
+
+4 URLConnection  클래스 
+
+URLConnection 클래스는 URL 객체와 애플리케이션 간의 통신을 
+담당하는 클래스이다. 원격 자원의 속성 정보를 얻거나 연결된 상태에서 
+원격지 파일을 읽는 등 다양한 기능의 메소드를 제공한다. 
+
+다음은 주요 메소드이다. 
+
+메소드 : 설명 
+
+URL getURL() :  해당 URLConnection 객체 지정된 URL을 반환한다. 
+
+boolean getDoInput() : URLConnection 객체가 입력용인지 아닌지를 반환한다. 
+
+void setDoInput(boolean) : URLConnection 객체가 입력용으로 사용할 것인지를 
+설정한다. 
+
+boolean getDoOutput() : URLConnection 객체가 출력용인지 아닌지를 반환한다. 
+
+boolean getAllowUserInteraction() : URLConnection 객체가 사용자 입력 유무를 
+검사한다. (기본은 허용하지 않는다.)
+
+boolean getUseCaches() : URLConnection 객체가 캐시 데이터를 사용하는지의 
+여부를 반환한다. 기본은 true 이다. 
+
+String getRequestProperty(String key) : 매개변수로 들어온 요청 프로퍼티인 
+key 에 해당되는 값을 String 으로 리턴한다. 
+
+long getIfModifiedSince() : 설정된 시간값을 반환한다. 
+
+String getHeaderFieldKey(String name) : 매개변수의 name은 응답 헤더이며, 
+이 응답 헤더에 해당하는 필드값을 반환한다. 
+
+int getContentLength() : content-length 응답 헤더의 값을 반환한다. 
+!
+실습하기 17-4 
+URLConnection 클래스 사용하기  
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex4
+ !
+ 
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Date;
+
+public class Network_ex4 {
+	public static void main(String[] args) {
+	
+try{
+URL url = new URL ("http://www.google.co.kr/ig/images/weather/sunny.gif");
+// 도메인을 인자로 하여 해당하는 URL 객체를 생성한다. 
+
+URLConnection con = url.openConnection();
+// URL 객체의 openConnection() 메소드를 호출하여 URLConnection 객체를 
+//리턴 받는다.
+
+con.connect();
+//URLConnection 객체의 connect() 메소드를 이용하여 원격지의 파일에 연결한다. 
+
+System.out.println("문서의 타입 : "+ con.getContenttType());
+System.out.println("마지막 수정일자 :  "+
+new Date(con.getLastModified()));
+int len = con.getContentLength();
+System.out.println("문서의 길이 : "+ len + " 바이트");
+// 다양한 메소드를 사용하여 원격지에 있는 파일의 정보를 출력한다. 
+
+}catch(Exception e){e.printStackTrace();}	
+}
+}
+//
+문서의 타입 : text/html; charset=UTF-8
+마지막 수정일자 :  Thu Jan 01 09:00:00 KST 1970
+문서의 길이 : 221 바이트
+
+
+5 URLEncoder 클래스 
+
+문자열을 "x-www-form-urlencoded" 라고 불리는 MIME 형식으로 
+변환하기 위한 클래스이다. 주로 웹 서버에 한글로 표시되는 쿼리 문자열을 
+요청할 때 사용된다. 
+
+변환 규칙은 다음과 같다. 
+
+-아스키 문자('a-z', 'A-Z', 0-9)는 그대로 변환 
+- 공백 문자는 + 기호로 변환
+- 기타 문자는 % 가 붙은 총 3개의 문자로 변환 
+
+실습하기 17-5 
+URLEncoder 클래스 사용하기  
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex5
+ !
+
+539 11/21
+
+
 
 
 

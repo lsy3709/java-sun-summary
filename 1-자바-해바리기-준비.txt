@@ -27566,7 +27566,7 @@ Lambda...1558688798269
 
 ------------------------------
 
-17장 
+17장 네트워크
 학습목표 
 -네트워크 개요에 관하여 학습한다. 
 -InetAddress 클래스의 메소드와 사용법에 관하여 학습한다. 
@@ -28025,7 +28025,364 @@ void setSoTimeout(int t) : 소켓 객체의 시간을 밀리세컨드 단위로 
 
 541 13/21
 
-클라이언트의 
+클라이언트의 Socket에 대응되는 원격 호스트의 소켓을 의미한다. 
+ServerSocket 클래스는 accept() 메소드를 통해 클라이언트의 요청을 
+받아들인다. 
+
+다음은 ServerSocket 클래스의 주요 메소드이다. 
+
+메소드 : 설명 
+void close() : ServerSocket 객체를 닫는다. 
+int getLocalPort() : ServerSocket 객체에 설정된 포트 번호를 반환한다. 
+Socket accept() : 클라이언트의 요청을 기다리는 메소드이다. 
+
+실습하기 17-6
+Socket을 이용한 통신하기  
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex6
+ !
+ 
+import java.net.*;
+import java.io.*;
+public class Network_ex6 {
+
+public static void main(String[] args) {
+ServerSocket s = null;
+//5432 포트를 이용하여 클라이언트가 접속하도록 
+//ServerSocket 클래스를 생성한다. 
+
+try {
+s = new ServerSocket(5432);
+}catch(Exception e) {e.printStackTrace();}
+try {
+while(true){
+//일반적으로 서버는 항상 실행 중이어야 하기 때문에 
+//무한루프로 실행시킨다. 
+
+Socket s1 = s.accept();
+//accept() 메소드를 사용하여 클라이언트가 접속하기를 기다린다. 
+//클라이언트가 접속이 되면 ServerSocket은 내부적으로 Socket 객체를 
+//하나 생성하여 클라이언트가 접속한 Socket을 대응하는 역할을 맡긴다. 
+
+OutputStream os = s1.getOutputStream();
+ObjectOutputStream oos = new ObjectOutputStream(os);
+oos.writeObject("Hello World");
+// 클라이언트에게 "Hello World"문자열을 출력시키기 위해서 
+//OutputStream을 얻고 filter 계열인 ObjectOutputStream 클래스의 
+//writeObject 메소드를 이용하여 데이터를 출력시킨다. 
+
+oos.close();
+s1.close();
+//사용된 자원을 해제한다. 
+
+}
+}catch(Exception e) { e.printStackTrace();}
+}
+}
+
+실습하기 17-6-2
+Socket을 이용한 통신하기  
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex6_2
+
+import java.net.*;
+import java.io.*;
+public class Network_ex6_2 {
+
+public static void main(String[] args) {
+
+try {
+Socket s1 = new Socket("localhost",5432);
+//서버 ip 주소와 5432 포트를 이용한 Socket 클래스를 생성한다.
+
+InputStream is = s1.getInputStream();
+ObjectInputStream ois = new ObjectInputStream(is);
+System.out.println(ois.readObject());
+//서버에서 출력시킨 데이터를 입력하기 위해서 InputStream을 얻는다. 
+//filter 계열인 ObjectInputStream 클래스의 readObject 메소드를 
+//이용하여 데이터를 입력 받는다. 
+
+ois.close();
+is.close();
+s1.close();
+//사용된 자원을 해제한다. 
+
+}catch(Exception e) {e.printStackTrace();}
+}
+}
+
+// 둘다 다 보임. 
+Hello World
+
+-----------------------------------------
+
+8 채팅 프로그램 
+
+서버와 클라이언트 간의 1:1 채팅이 가능한 프로그램. 
+
+실습하기 17-7 Socket을 이용한 채팅 프로그램 개발하기 
+
+채팅 프로그램의 화면 구성은 AWT로 구성되어 있으며 서버와 클라이언트 
+간의 일대일 채팅만 가능하다. 
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex7_Chat_Server
+ !
+
+import java.net.*;
+import java.io.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class Network_ex7_Chat_Server extends Thread implements ActionListener {
+//Thread 클래스를 상속 받고 ActionListener 인터페이스를 구현하는 
+// Network_ex7_Chat_Server 클래스를 정의한다. 
+
+Frame frame;
+TextArea ta;
+TextField tf;
+ServerSocket s;
+Socket s1;
+DataOutputStream dos;
+DataInputStream dis; 
+boolean stop;
+// 필요한 변수를 정의.
+
+public Network_ex7_Chat_Server() {
+launchFrame();
+service();
+}
+// 생성자 안에서 launchFrame() 메소드와 service() 메소드를 호출한다. 
+
+public void launchFrame(){
+frame = new Frame("일대일 채팅실습");
+ta = new TextArea();
+tf = new TextField();
+frame.setBackground(Color.lightGray);
+ta.setEditable(false);
+frame.add(ta, BorderLayout.CENTER);
+frame.add(tf, BorderLayout.SOUTH);
+tf.addActionListener(this);
+frame.setSize(500,300);
+frame.setVisible(true);
+tf.requestFocus();
+}
+// 변수에 대한 객체를 생성한다. 
+
+public void service() {
+try{
+ta.append("서비스 하기 위해 준비중..\n");
+s = new ServerSocket(5432);
+// 5432 포트 번호를 가진 ServerSocket 클래스의 객체를 생성한다. 
+
+ta.append("클라이언트 접속 대기중..");
+s1 = s.accept();
+// accept() 메소드를 이용해서 클라이언트의 요청을 기다린다. 
+
+ta.append("클라이언트가 접속하였습니다. : "+s1.getInetAddress() + "\n");
+dos = new DataOutputStream(s1.getOutputStream());
+dis = new DataInputStream(s1.getInputStream());
+// InputStream과 OutputStream 객체를 생성한다. 
+
+this.start();
+// 스레드를 start() 메소드로 호출한다. 
+
+dos.writeUTF("채팅 서버에 접속하신걸 환영합니다.");
+}catch(IOException e) { e.printStackTrace();}
+}
+
+public static void main(String[] args){
+new Network_ex7_Chat_Server();
+}
+
+public void actionPerformed(ActionEvent action){
+//텍스트 필드에 대한 이벤트 처리를 위해 
+//actionPerformed() 메소드를 구현한다. 
+
+try {
+String msg = tf.getText();
+ta.append(msg +"\n");
+if(msg.equals("exit")){
+ta.append("bye");
+stop = true;
+dos.close();
+s1.close();
+System.exit(0);
+}else{
+dos.writeUTF("서버 : "+ msg);
+tf.setText("  ");
+}
+}catch(IOException e){
+ta.append(e.toString() + "\n");
+}
+}
+
+public void run() {
+try{
+while(!stop){
+ta.append(dis.readUTF() + "\n");
+}
+//stop 변수가 true 가 될 때까지 클라이언트에서 
+//전송된 데이터를 입력받는다. 
+
+dis.close();
+s1.close();
+}catch(EOFException e){
+ta.append("클라이언트로부터 연결이 끊어졌습니다. \n");
+}catch(IOException e1){
+e1.printStackTrace();
+}
+}
+}
+
+ 
+ 
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Network 생성. 
+ 패키지 : ch17.Network
+ 클래스 이름 : Network_ex7_Chat_Client
+ !
+
+import java.net.*;
+import java.io.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class Network_ex7_Chat_Client extends Thread implements ActionListener {
+// Thread 클래스를 상속받고 ActionListener 인터페이스를 구현하는 
+// SimpleClient 클래스를 정의한다. 
+
+Frame frame;
+TextArea ta;
+TextField tf, tf2;
+Dialog dialog;
+Label label;
+
+Socket s1;
+DataOutputStream dos;
+DataInputStream dis;
+boolean stop;
+String host;
+
+// 필요한 변수를 정의한다. 
+
+public Network_ex7_Chat_Client(){
+launchFrame();
+}
+// 생성자 안에서 launchFrame() 메소드를 호출한다. 
+
+public void launchFrame(){
+frame = new Frame("일대일 채팅 실습");
+ta = new TextArea();
+tf = new TextField();
+frame.setBackground(Color.lightGray);
+ta.setEditable(false);
+frame.add(ta,BorderLayout.CENTER);
+frame.add(tf, BoarderLayout.SOUTH);
+tf.addActionListener(this);
+frame.setSize(500,300);
+frame.setVisible(true);
+tf.requestFocus();
+dialog = new Dialog(frame , " 서버 IP", true);
+label = new Label("접속할 서버 IP를 입력하세요");
+tf2 = new TextField(15);
+dialog.add(label, BoarderLayout.NORTH);
+dialog.add(tf2, BoarderLayout.CENTER);
+tf2.addActionListener(this);
+dialog.pack();
+dialog.show();
+service(host);
+tf2.requestFocus();
+}
+// 변수에 대한 객체를 생성한다. 
+
+public void service() {
+try {
+s1 = new Socket(host, 5432);
+// 서버의 IP 주소와 5432 포트 번호를 가진 
+// Socket 클래스의 객체를 생성한다. 
+
+dis = new DataInputStream(s1.getInputStream());
+dos = new DataOutputStream(s1.getOutputStream());
+// InputStream 클래스와  OutputStream 클래스를 객체 생성한다. 
+
+ta.append("접속완료.. \n");
+this.start();
+//스레드를 start() 메소드로 호출한다. 
+
+}catch(IOException e ) {e.printStackTrace();}
+}
+
+public static void main(String[] args){
+new Network_ex7_Chat_Client();
+}
+
+public void actionPerformed(ActionEvent action){
+// 텍스트 필드에 대한 이벤트 처리를 위해 actionPerformed() 
+//메소드를 구현한다. 
+
+if(tf == action.getSource()){
+try {
+String msg = tf.getText();
+ta.append(msg + "\n");
+if(msg.equals("exit")){
+ta.append("bye");
+stop = true;
+dos.close();
+s1.close();
+System.exit(0);
+}else{
+dos.writeUTF("서버 : " + msg);
+tf.setText("  ");
+}
+}catch(IOException e){
+ta.append(e.toString() + "\n");
+}
+}else{
+host = tf2.getText().trim();
+if(host.equals(""))host = "localhost";
+dialog.idspose();
+}
+}
+
+public void run() {
+System.out.println("Thread started...");
+try {
+while(!stop) {
+// stop 변수가 true 될 때까지 서버에서 전송된 데이터를 입력받는다. 
+
+ta.append(dis.readUTF() + "\n");
+}
+dis.close();
+s1.close();
+}catch(EOFException e){
+ta.append("서버로부터 연결이 끊어졌습니다. \n");
+}catch(IOException e1){
+e1.printStackTrace();
+}
+}
+}
+
+이클립스 한글 깨질 때, 
+해당 프로젝트 우클릭에서 
+Run 설정에서,
+[Arguments]->VM arguments 에
+-Dfile.encoding=MS949
+입력.
+
+
+
+
+
 
 
 

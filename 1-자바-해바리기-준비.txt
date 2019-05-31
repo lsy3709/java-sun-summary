@@ -7559,7 +7559,7 @@ abstract 키워드를 선어부에 추가한다.
 기법을 abstract method design pattern 이라 한다. 
 
 실습4
-ex)
+ex4)
 package ch08.abs.good;
 
 abstract class Vehicle {
@@ -7815,7 +7815,7 @@ abstract 클래스에서 살펴봤듯이 물려받은 abstract 메서드를 재�
 상속 전용의 클래스로 활용할 수도 있다. 
 
 실습8
-ex)
+ex8)
 package ch08.inter;
 
 public class IronMan implements Heroable {
@@ -27230,8 +27230,9 @@ public class Wb_Ex3 extends JFrame{
 	}
 
 }
+
 518 2/11
-람다 표현식 
+16-람다 표현식 
 
 람다 표현식을 사용하면 복잡한 메소드들을 나열하지 않아도 계산을 간결한 
 코드 조각(함수이름없음)으로 처리하는 함수형 프로그래밍이 가능하다. 
@@ -28459,6 +28460,10 @@ delete from TB_MEMBER where id = 'lsy3709';
 drop user 사용자 계정 CASCADE;
 !
 
+사용자 권한 
+ex)
+Grant connect,resource to user01; 
+
 -----------------------------------------------------------------------
 
 DTO ( Data Transfer Object) : 데이터 전송(이동) 객체 , 
@@ -28671,6 +28676,9 @@ public class MemberDAO {
             while(rs.next()){
                 String id = rs.getString("id");
                 String pwd = rs.getString("pwd");
+				String pwd2 = pwd.replaceAll(pwd, "*******");
+				//비밀번호 출력시 **** 대체 하기. 
+				
                 String name = rs.getString("name");
                 String tel = rs.getString("tel");
                 String addr = rs.getString("addr");
@@ -28682,7 +28690,8 @@ public class MemberDAO {
                
                 Vector row = new Vector();
                 row.add(id);
-                row.add(pwd);
+                row.add(pwd2);
+				//비밀번호 출력시 *** 설정.
                 row.add(name);
                 row.add(tel);
                 row.add(addr);
@@ -29005,6 +29014,8 @@ public class MemberProc extends JFrame implements ActionListener {
         //비밀번호
         JLabel bPwd = new JLabel("비밀번호 : ");
         pfPwd = new JPasswordField(20);
+		pfPwd.setEchoChar('*');
+		//비밀번호 표시 부분 
         gbAdd(bPwd, 0, 1, 1, 1);
         gbAdd(pfPwd, 1, 1, 3, 1);
        
@@ -29403,7 +29414,14 @@ public class Member_List extends JFrame implements MouseListener,ActionListener{
    
 }
  --------------------------------------------------------------------
- 완료
+회원 관리 변화 주기.
+
+자바 커피 
+
+12 스레드 
+
+
+
  
  
  

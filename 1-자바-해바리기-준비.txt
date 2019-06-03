@@ -29828,7 +29828,298 @@ t2는 t4 가 끝날 때까지 block 된다.
  패키지 : ch12.Thread
  클래스 이름 : GooGoo_Sleep
  
- 351 13/23
+ package ch12.Thread;
+
+public class GooGoo_Sleep implements Runnable {
+	// Runnable 인터페이스를 구현한 클래스 정의
+	   private int dan;
+	   // 구구단 중 몇단인지를 저장할 변수 dan 선언.
+
+	    public GooGoo_Sleep( int dan){
+	       this.dan = dan;
+	       // 변수 dan 을 초기화할 생성자를 정의
+	    }
+	    public void run(){
+	    	// run() 메소드안에서 랜덤값(임의의값)을 long 형으로 얻음.
+	      long sleepTime = (long)(Math.random() * 500 );
+	      System.out.println(dan+"단이"+ sleepTime+"만큼 sleep..");
+	      try{
+	          Thread.sleep( sleepTime );
+	          // Thread.sleep (sleep Time) 메소드를 사용하여 
+	          // 현재 실행 중인 스레드를 변수 sleep TIme 의 값만큼 block 시킴. 
+	      }catch(Exception e){
+	    	  e.printStackTrace(); 
+	      }
+
+	     for( int i=1 ; i<=9 ; i++ ){
+	    	 // 변수 dan 과 for 문을 사용하여 구구단을 출력 
+	      System.out.println( dan+" 단 : "+dan+" * " + i +" = "+ dan*i );
+	     }
+	   }
+	 }
+	 
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 : Ex12_5
+
+package ch12.Thread;
+
+public class Ex12_5 {
+	   public static void main( String [] args ) {
+	        
+	           Thread t2 = new Thread( new GooGoo_Sleep
+	(2) );
+	           Thread t3 = new Thread( new GooGoo_Sleep
+	(3) );
+	           Thread t4 = new Thread( new GooGoo_Sleep
+	(4) );
+	           Thread t5 = new Thread( new GooGoo_Sleep
+	(5) );
+	           Thread t6 = new Thread( new GooGoo_Sleep
+	(6) );
+	           Thread t7 = new Thread( new GooGoo_Sleep
+	(7) );
+	           Thread t8 = new Thread( new GooGoo_Sleep
+	(8) );
+	           Thread t9 = new Thread( new GooGoo_Sleep
+	(9) );
+	           // 구구단에서 2단부터 9단까지를 출력하기 위해 
+	           // 총 8개의 GooGoo 클래스를 이용하는 스레드 객체를 생성.
+	           t2.start();
+	           t3.start();
+	           t4.start();
+	           t5.start();
+	           t6.start();
+	           t7.start();
+	           t8.start();
+	           t9.start();
+	         // 8개 모두의 스레드를 start() 메소드를 호출하여 실행.
+	          System.out.println( "main() 종료.........");   
+	          // "main() 종료....." 문자열을 출력하여 Main 스레드도 실행 중임을
+	          // 알린다. Main 스레드의 역할은 4행분터 25행까지의 main() 메소드를 
+	          // 수행하는 것이다. 결국, 실제로는 9개의 스레드가 실행되고 있는 것.
+	          // 따라서 "main() 종료........." 문자열이 가장 먼저 출력될수도 있지만,
+	          // 출력 결과처럼 다른 스레드 중간에 출력될수도 있다. 
+	          // 9개의 스레드가 번갈아 가면서 실행중이기 때문이다. 
+	          
+	      }
+	 }
+//
+main() 종료.........
+9단이412만큼 sleep..
+5단이104만큼 sleep..
+4단이201만큼 sleep..
+8단이400만큼 sleep..
+2단이81만큼 sleep..
+7단이102만큼 sleep..
+6단이125만큼 sleep..
+3단이383만큼 sleep..
+2 단 : 2 * 1 = 2
+2 단 : 2 * 2 = 4
+이하 생략...
+	 
+실습하기 12-6 
+구구단을 이용한  yield() 메소드 실습 예제 
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 : GooGoo_Yield
+ 
+ package ch12.Thread;
+
+public class GooGoo_Yield implements Runnable {
+	// Runnable 인터페이스를 구현한 클래스 정의
+	   private int dan;
+	// 구구단 중 몇단인지를 저장할 변수 dan 선언.
+	    public GooGoo_Yield( int dan){// 변수 dan 을 초기화할 생성자를 정의
+	       this.dan = dan;
+	    }
+	    public void run(){ //dan 값이 8이면 현재 실행 중인 스레드가
+	    	// block 되고 우선권이 동일한 다른 스레드에게 실행할 기회를 준다.
+	      if( dan == 8 ) {
+	      System.out.println("8´ yield..");
+	        Thread.yield();
+	      }
+	     for( int i=1 ; i<=9 ; i++ ){
+	   System.out.println( dan+" ´ : "+dan+" * " + i +" = "+ dan*i );
+	// 변수 dan 과 for 문을 사용하여 구구단을 출력 
+	     }
+	   }
+	 }
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 : Ex12_6
+
+package ch12.Thread;
+
+public class Ex12_6 {
+	   public static void main( String [] args ) {
+	        
+	           Thread t2 = new Thread( new GooGoo_Yield(2) );
+	           Thread t3 = new Thread( new GooGoo_Yield(3) );
+	           Thread t4 = new Thread( new GooGoo_Yield(4) );
+	           Thread t5 = new Thread( new GooGoo_Yield(5) );
+	           Thread t6 = new Thread( new GooGoo_Yield(6) );
+	           Thread t7 = new Thread( new GooGoo_Yield(7) );
+	           Thread t8 = new Thread( new GooGoo_Yield(8) );
+	           Thread t9 = new Thread( new GooGoo_Yield(9) );
+	           // 총 8개의 GooGoo 클래스를 이용하는 스레드 객체를 생성.
+	           t2.setPriority(4);
+	           t3.setPriority(4);
+	           t4.setPriority(4);
+	           t5.setPriority(4);
+	           t6.setPriority(4);
+	           t7.setPriority(6);
+	           t8.setPriority(5);
+	           t9.setPriority(5);
+	        //8개의 스레드의 우선권을 지정한 값으로 변경.
+	           t2.start();
+	           t3.start();
+	           t4.start();
+	           t5.start();
+	           t6.start();
+	           t7.start();
+	           t8.start();
+	           t9.start();
+	           // 8개 모두의 스레드를 start() 메소드를 호출하여 실행.
+	          System.out.println( "main() 종료.........");   
+	          //"main() 종료........." 문자열을 출력하여 Main 스레드도 실행중임 알림.
+	      }
+	 }
+//
+2 ´ : 2 * 1 = 2
+3 ´ : 3 * 1 = 3
+5 ´ : 5 * 1 = 5
+6 ´ : 6 * 1 = 6
+4 ´ : 4 * 1 = 4
+9 ´ : 9 * 1 = 9
+7 ´ : 7 * 1 = 7
+8´ yield..
+main() 종료.........
+8 ´ : 8 * 1 = 8
+7 ´ : 7 * 2 = 14
+이하 생략 
+우선권이 가장 높은 7단이 먼저 수행되고, 이어서 8단이 실행되다가 
+yield() 메소드를 만나서 같은 우선권을 가진 9단에게 양보함. 
+하지만, 항상 같은 결과가 나온다는 보장은 없다. 
+결구, 스레드의 실행 순서는 스레드 스케줄러에 의해서 결정된다. 
+!
+
+실습하기 12-7 구구단을 이용한 join()  메소드 실습예제 
+
+구구단을 이용하여 join() 메소드를 적용하는 실습예제.
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 : GooGoo_Join
+ 
+package ch12.Thread;
+
+public class GooGoo_Join implements Runnable {
+	// Runnable 인터페이스를 구현한 클래스 정의
+	   private int dan;
+	// 구구단 중 몇단인지를 저장할 변수 dan 선언.
+	    public GooGoo_Join( int dan){
+	       this.dan = dan;// 변수 dan 을 초기화할 생성자를 정의
+	    }
+	    public void run(){
+	       try{
+	          Thread.sleep(500); // 0.5초 동안 실행 중인 스레드를 block 시킴.
+	        }catch(Exception e){ e.printStackTrace(); }
+	      
+	     for( int i=1 ; i<=9 ; i++ ){ 
+	   System.out.println( dan+" 단 : "+dan+" * " + i +" = "+ dan*i );
+	     }// 변수 dan 과 for 문을 사용하여 구구단을 출력 
+	   }
+	 }
+	 
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 : Ex12_7
+
+package ch12.Thread;
+
+public class Ex12_7 {
+	   public static void main( String [] args ) {
+	        
+	           Thread t2 = new Thread( new GooGoo_Join(2) );
+	           Thread t3 = new Thread( new GooGoo_Join(3) );
+	           Thread t4 = new Thread( new GooGoo_Join(4) );
+	           Thread t5 = new Thread( new GooGoo_Join(5) );
+	           Thread t6 = new Thread( new GooGoo_Join(6) );
+	           Thread t7 = new Thread( new GooGoo_Join(7) );
+	           Thread t8 = new Thread( new GooGoo_Join(8) );
+	           Thread t9 = new Thread( new GooGoo_Join(9) );
+	           
+	           t2.setPriority(4);
+	           t3.setPriority(4);
+	           t4.setPriority(4);
+	           t5.setPriority(4);
+	           t6.setPriority(4);
+	           t7.setPriority(4);
+	           t8.setPriority(4);
+	           t9.setPriority(4);
+	        
+	           t2.start();
+	           t3.start();
+	           t4.start();
+	           t5.start();
+	           t6.start();
+	           t7.start();
+	           t8.start();
+	           t9.start();
+	           try{
+	              t5.join();
+	            }catch(Exception e) { e.printStackTrace(); }         
+
+	          System.out.println( "main() 종료.........");   
+	      }
+	 }
+//
+3 단 : 3 * 1 = 3
+8 단 : 8 * 1 = 8
+6 단 : 6 * 1 = 6
+9 단 : 9 * 1 = 9
+7 단 : 7 * 1 = 7
+5 단 : 5 * 1 = 5
+4 단 : 4 * 1 = 4
+2 단 : 2 * 1 = 2
+4 단 : 4 * 2 = 8
+이하 생략 
+!
+현재 실행 중인 스레드는 Main 스레드이며 t5.join 메소드를 
+만나게 되어 t5 스레드가 종료하기 전까지 Main 스레드가 block 된다. 
+따라서 t5 가 종료된 후에 Main 스레드가 종료된다. 
+결과적으로 스레드의 종료 순서를 지정할수 있다. 
+
+2 동기화 
+
+여러 스레드는 하나의 데이터를 공유할 수 있다. 공유 메커니즘은 성능 및 자원의 
+효율성에서는 좋지만, 데이터 일관성에서는 문제가 발생할수 있다. 
+예를 들어 데이터베이스에서 하나의 레코드를 여러 사용자가 접근하는 경우르 생각.
+
+A 사용자는 어떤 레코드를 수정하려고 하고, B 사용자는 같은 레코드를 삭제하려고 
+접속을 하는 경우를 고려했을 때 언뜻 생각해도 많은 문제가 발생할 수 있음을 쉽게 
+알수 있다. 
+데이터베이스 락 개념을 적용시켜 하나의 작업이 끝날 때까지 다른 작업을 기다리게 
+하는 방법으로 문제를 해결한다. 
+
+자바도 여러 스레드가 하나의 데이터를 공유할 때 하나의 스레드가 해야 하는 
+작업이 끝날 때까지 공유되지 않도록 보장해주는 방법이 제공되며 이 개념을 동기화 
+(synchronization)라고 한다. 자바에서 동기화는 synchronized 키워드를 사용하여 
+적용한다. 
+
+다음은 동기화를 처리하는 2가지 방법이다. 
+
+(1) 동기화 메소드를 사용하는 방법 
+
+358 20/23 스레드
 
 2. synchronized 키워드를 이용한 스레드 동기화 
 

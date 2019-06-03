@@ -30121,9 +30121,180 @@ A 사용자는 어떤 레코드를 수정하려고 하고, B 사용자는 같은
 
 358 20/23 스레드
 
-2. synchronized 키워드를 이용한 스레드 동기화 
+접근지정자 synchronized 리턴타입 메소드명() {...}
 
+메소드를 선언할 때 synchronized 키워드를 지정하는 방법이다. 
+이 방법은 메소드 내의 모든 코드가 동기화가 된다. 
+따라서 특정 스레드가 이 메소드를 모두 수행할 때까지 다른 스레드는 
+block  된다. 
+
+(2) 동기화 블록을 사용하는 방법 
+
+접근지정자 리턴타입 메소드명() {
+...
+synchronized(공유객체){
+}
+...
+}
+
+메소드 내에서 synchronized 키워드 블록을 사용하는 것이다. 
+이 방법은 메소드 내의 모든 코드가 아닌 sychronized 블록만 동기화된다. 
+따라서 전체 메소드를 동기화하는 방법보다는 더욱 효율적이다. 
+
+실습하기 12-8
+동기화를 이용한 스레드 실습 예제. 
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 :  SharedData
  
+ package ch12.Thread;
+
+public class SharedData {
+	//서로 다른 두개의 객체(DownThread 와 UpThread 클래스의 객체가) 공유해서 
+	//사용할 SharedData 클래스를 작성한다.
+    int data;
+  
+   public synchronized void up (String name){
+	   // SharedData 클래스의 int 형 변수 data의 값을 1 증가시키는 up()
+	   // 메소드를 작성한다. 동기화(synchronized)되어 있기 때문에 
+	   // 12 ~ 14 행 코드가 모두 수행되는 것을 보장.
+      System.out.print( name +" 이"+ data );
+      data++;
+      System.out.println( "를 "+ data +" 로 증가시킴");
+   }
+   public synchronized void down (String name){
+	   // SharedData 클래스의 int 형 변수 data의 값을 1 감소시키는 down()
+	   // 메소드를 작성한다. 동기화(synchronized)되어 있기 때문에 
+	   // 20 ~ 22 행 코드가 모두 수행되는 것을 보장.
+      System.out.print( name +" 이"+ data );
+      data--;
+      System.out.println( "를 "+ data +" 로 감소시킴");
+   }
+}
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 :  UpThread
+
+package ch12.Thread;
+
+public class UpThread extends Thread{
+	//Thread 클래스를 상속받은 UpThread 클래스를 작성.
+    
+    SharedData data;
+    String name;
+    // 공유 데이터인 SharedData 클래스와 스레드명을 저장하는 String 형의 변수
+    // name 을 선언. 
+  public UpThread(SharedData data, String name ){
+       this.data = data;
+       this.name = name;
+       // SharedData 클래스의 객체 data와 String 객체인 name 의 값을 
+       // 초기화하는 생성자를 작성. 
+   }
+   public void run(){
+   for( int i=0; i < 4; i++ ){
+     try{
+       Thread.sleep(500);
+       // sleep() 메소드에 의해 0.5초 간격으로 블록되면서 SharedData  클래스의 
+       // up() 메소드를 호출한다. SharedDate 클래스에 정의된 up() 메소드는 
+       // synchronized(동기화)되어 있다.
+    }catch(Exception e){ e.printStackTrace();}
+ data.up(name);
+ }
+}
+}
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 :  DownThread
+
+package ch12.Thread;
+
+public class DownThread extends Thread{
+	//Thread 클래스를 상속받은 UpThread 클래스를 작성.
+    SharedData data;
+     String name;
+  // 공유 데이터인 SharedData 클래스와 스레드명을 저장하는 String 형의 변수
+     // name 을 선언. 
+   public DownThread(SharedData data, String name ){
+        this.data = data;
+       this.name = name;
+    // SharedData 클래스의 객체 data와 String 객체인 name 의 값을 
+       // 초기화하는 생성자를 작성. 
+    }
+    public void run(){
+    for( int i=0; i < 4; i++ ){
+      try{
+        Thread.sleep(500);
+     // sleep() 메소드에 의해 0.5초 간격으로 블록되면서 SharedData  클래스의 
+        // down() 메소드를 호출한다. SharedDate 클래스에 정의된 down() 메소드는 
+        // synchronized(동기화)되어 있다.
+       }catch(Exception e){ e.printStackTrace();}
+    data.down(name);
+   }
+ }
+}
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Thread 생성. 
+ 패키지 : ch12.Thread
+ 클래스 이름 :  Ex12_8
+ 
+ package ch12.Thread;
+
+public class Ex12_8 {
+	   public static void main( String [] args ) {
+	       SharedData data = new SharedData();
+	       // UpThread 와 DownThread 클래스의 객체가 공유하는 SharedData 클래스의를 
+	       // 객체를 생성한다.
+	        UpThread t = new UpThread( data, "UP" );
+	        DownThread t2 = new DownThread( data, "Down" );
+	        // UpThread 와 DownThread 클래스의 객체를 생성하면서 생성자의 
+	        // 인자로 공유 객체인 SharedData 클래스의 객체와 스레드명을 지정.
+	        // 이렇게 여러 스레드가 하나의 객체를 공유하면 동기화 문제가 발생
+	        // 할수 있지만, 자바 스레드는  synchronized 키워드를 사용하여 
+	        // 동기화 문제를 방지할수 있다.
+	        t.start();
+	        t2.start();
+	   }
+	 }
+//
+UP 이0를 1 로 증가시킴
+Down 이1를 0 로 감소시킴
+UP 이0를 1 로 증가시킴
+Down 이1를 0 로 감소시킴
+UP 이0를 1 로 증가시킴
+Down 이1를 0 로 감소시킴
+UP 이0를 1 로 증가시킴
+Down 이1를 0 로 감소시킴
+!!
+
+---------------------------------------------------
+11장
+자바 I/O 
+
+학습 목표
+- 자바의 기본 I/O 에 관하여 학습한다.
+- 표준 입력 및 표준 출력에 관하여 학습한다. 
+- Filter 계열에 관하여 학습한다. 
+- File 클래스에 관하여 학습한다. 
+- nio 패키지의 Path 클래스 및 Files  클래스에 관하여 학습한다. 
+- 파일 입출력에 관하여 학습한다. 
+- 객체 직렬화인 Serialzation 에 관하여 학습한다. 
+!
+ 
+ 1. 자바의 I/O 개요 
+ 2. 표준 입출력
+ 3. Node 계열과 Filter 계열 
+ 4. File API, Path 및 Files API 
+ 5 . 파일 입출력 
+ 6. 객체 직렬화 
+ 
+308 2/32 자바의 I/O
  
  
  

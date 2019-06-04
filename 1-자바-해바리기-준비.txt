@@ -30274,8 +30274,7 @@ Down 이1를 0 로 감소시킴
 !!
 
 ---------------------------------------------------
-11장
-자바 I/O 
+11장 자바 I/O 
 
 학습 목표
 - 자바의 기본 I/O 에 관하여 학습한다.
@@ -30760,14 +30759,696 @@ String [] list() : 디렉터리 내의 하위 디렉터리 및 파일 정보를 
  패키지 : ch11.IO
  클래스 이름 :  Ex11_5
 
- 5 . 파일 입출력 
- 6. 객체 직렬화 
+package ch11.IO;
+
+import java.io.File;     
+
+public class Ex11_5 {
+ public static void main( String [] args ) {
+
+    try{
+      File f = new File( "c:\\temp", "ReadMe.txt" );
+      //"C:\temp" 디렉토리에 있는 "ReadMe.txt" 파일을 다루는 File 객체를 생성 
+      System.out.println( f.getName() );
+      // 생성한 File 객체의 파일명을 출력
+      System.out.println( f.exists() );
+      // File  객체의 파일이 존재하면 true 값을 출력
+      System.out.println( f.getPath());
+      // File 객체의 파일 경로를 출력 
+      System.out.println( f.length() );
+      // File 객체의 파일 크기를 출력 
+      System.out.println( File.separator );
+      //현재 시스템에서 사용하는 경로 구분자를 출력한다. 
+      // 윈도우는 '\'이고, 유닉스 계열은 '/'이다. 
+      boolean b = new File("c:\\temp\\aaa").mkdir();
+      //지정된 C:\temp 디렉토리안에 "aaa" 디렉토리를 생성하는 코드.
+      // 디렉토리 생성에 성공하면 true 값을 리턴한다.
+      boolean b2 = new File("c:\\temp", "FileInfo.txt").delete();
+      //C:\temp  디렉토리에 있는 "FileInfor.txt" 파일을 삭제하는 코드
+      // 파일 삭제에 성공하면 true 값을 리턴한다. 
+
+      String [] listing = new File("c:\\temp").list();
+      for( String str : listing ){
+        System.out.println( "temp 폴더내용: " +  str );
+        //C:\temp 디렉토리에 있는 파일 및 디렉토리 정보를 list() 메소드를 
+        // 사용하여 문자열 배열로 얻어와, for 문을 통해 폴더 내의 목록을 
+        // 콘솔에 출력.
+      }
+    }catch(Exception e){ e.printStackTrace();}
+    }
+}
+//
+ReadMe.txt
+false
+c:\temp\ReadMe.txt
+0
+\
+temp 폴더내용: aaa
+temp 폴더내용: AUtempR
+temp 폴더내용: byChannel.txt
+temp 폴더내용: byChannel2.txt
+temp 폴더내용: commons-dbcp2-2.1.1
+temp 폴더내용: commons-dbcp2-2.1.1-bin.zip
+temp 폴더내용: commons-logging-1.2
+temp 폴더내용: commons-logging-1.2-bin.zip
+temp 폴더내용: commons-pool2-2.4.3
+temp 폴더내용: commons-pool2-2.4.3-bin.zip
+temp 폴더내용: copied_explorer.exe
+temp 폴더내용: database
+temp 폴더내용: diary.txt
+temp 폴더내용: explorer.exe
+temp 폴더내용: fromStream.txt
+temp 폴더내용: Hello.class
+temp 폴더내용: Hello.java
+temp 폴더내용: HncDownload
+temp 폴더내용: mydir
+temp 폴더내용: objParent.dat
+temp 폴더내용: objPerson.dat
+temp 폴더내용: streamtest.dat
+
+4.2 java.nio.file.Path 클래스 
+
+Path 클래스는 java.io.File 클래스 파일의 단점을 보완하기 위해서 
+Java 7 버전에서 추가된 클래스. 
+
+단점
+- 대부분의 메소드가 실패했을 때 예외 발생이 안되어 디버깅 처리가 어렵다. 
+- 파일 복사 및 이동 등 빈번하게 사용되는 기능을 지원하지 않는다. 
+- 파일의 메타 데이터 접근에 비효율적이다.
+- 파일 및 디렉토리와 관련된 보안 속성이 빠져 있다. 
+
+실습하기 11-6 Path 객체를 이용한 파일의 메타 정보 알아보기 
+파일의 메타 정보를 출력하는 프로그램. 
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_6
  
+ package ch11.IO;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+public class Ex11_6 {
+	public static void main(String[] args) {
+
+		Path path = Paths.get("C:\\temp\\ReadMe.txt");
+// Path 객체를 얻기 위하여 Paths.get(파일경로) 메소드를 사용한다.
+		System.out.println("getFileName: " + path.getFileName());
+		System.out.println("getParent: " + path.getParent());
+		System.out.println("getRoot: " + path.getRoot());
+		System.out.println("isAbsolute: " + path.isAbsolute());
+// 지정한 파일에 대한 정보(파일명, 디렉토리등)를 얻기 위하여 Path 객체의 
+		// 다양한 메소드를 사용한다. 
+		
+		//toUri() : 브라우저에서 열수 있는 Path 반환
+		URI ul = path.toUri();
+		System.out.println(ul);
+		// Path 객체로부터 웹 브라우저에서 사용 가능한 URI 객체를 얻기 위하여 
+		// Path 객체의toUri() 메소드를 사용한다. 
+
+		//toAbsolutePath() : 절대경로를 사용하는 path 반환
+		Path xxx = Paths.get("ReadMe.txt");
+		Path xxx2 = xxx.toAbsolutePath();
+		System.out.println(xxx2);
+
+		// subpath : 하위 경로를 만들어 경로의 일부를 가져온다.
+		Path yyy = Paths.get("c:\\temp\\aaa\\aaa2\\ReadMe.txt");
+		Path yyy2 = yyy.subpath(0, 3);
+		System.out.println(yyy2);
+
+		//resolve: 경로를 결합하여 새 경로를 생성한다.
+		Path p1 = Paths.get("C:\\Temp\\aaa");
+		Path p2 = Paths.get("test.txt");
+		Path p3 = p1.resolve(p2);
+		System.out.println(p3);
+	}
+}
+//
+getFileName: ReadMe.txt
+getParent: C:\temp
+getRoot: C:\
+isAbsolute: true
+file:///C:/temp/ReadMe.txt
+C:\Users\itwill-cisco1205\eclipse-workspace\Java_IO\ReadMe.txt
+temp\aaa\aaa2
+C:\Temp\aaa\test.txt
+
+4.3 java.nio.file.Files 클래스 
+
+java.nio.file.Files 클래스는 디렉토리 생성및 삭제, 파일 복사, 이동,
+디렉토리 목록 보기 등의 다양한 기능을 제공. 
+
+실습하기 11-7 File 객체를 이용한 파일 및 디렉토리 관리 
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_7
+ 
+ package ch11.IO;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
+public class Ex11_7 {
+	public static void main(String[] args) {
+
+		// 1. 파일 또는 디렉터리 확인
+		Path path = Paths.get("C:\\temp\\aaa");
+		boolean exist = Files.exists(path);
+		System.out.println(exist);
+		// 지정한 경로가 존재하는지 알아보기 위하여 Files.exist(path)
+		// 메소드를 사용. 존재하면 ture 값 리턴, 존재 안하면 false 값 리턴. 
+
+		// 2. 읽기 ,쓰기 , 실행 여부 리턴
+		boolean readable = Files.isReadable(path);
+		boolean writeable = Files.isWritable(path);
+		boolean executable = Files.isExecutable(path);
+		System.out.println(readable + "\t" + writeable + "\t" + executable);
+		// 지정한 Path의 읽기, 쓰기, 실행 가능 여부를 확인하기 위하여 
+		// isReadable(), isWriteable(), isExecutable() 메소드를 사용한다. 
+		// 사용 가능 여부에 따라서 boolean 형의 값을 리턴. 
+
+		// 2. 파일 및 디렉토리 생성하기
+		Path newDir = Paths.get("C:\\temp\\ccc");
+		// 지정한 디렉토리를 생성하기 위하여 Files.createDirectories(경로)
+		// 메소드를 사용한다. 
+		try {
+			Path xx = Files.createDirectories(newDir);
+			System.out.println(xx);
+			// 지정한 파일 및 디렉토리를 삭제하기 위하여 Files.delete(경로)
+			// 또는 Files.deleteIfExists(경로) 메소드를 사용한다. 
+			// 주의할 점은 디렉토리를 삭제하는 것이면 반드시 디렉토리가 
+			// 비어 있어야 한다. 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		Path newFile = Paths.get("C:\\Temp\\xxx.txt");
+		Path xx2 = null;
+		try {
+			xx2 = Files.createFile(newFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// 3. 파일 또는 디렉토리 삭제 ( 디렉토리는 비어 있어야 한다. )
+
+		try {
+			Files.delete(newDir);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		try {
+			Files.deleteIfExists(xx2);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		// 4. 파일 또는 디렉토리 복사
+		Path original = Paths.get("c:\\temp\\ReadMe.txt");
+		Path copy = Paths.get("c:\\temp\\ReadMe_copy.txt");
+		//파일 또는 디렉토리를 복사하기 위하여 Files.copy(경로)
+		// 메소드를 사용. 파일 존재하는 경우에 덮어쓰기 위하여 
+		// StandardCopyOption.REPLACE_EXISTING 옵션을 사용. 
+		try {
+			Path yyy = Files.copy(original, copy,
+					StandardCopyOption.REPLACE_EXISTING);
+			System.out.println(yyy);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}
+
+//
+true
+true	true	true
+C:\Temp\ccc
+c:\Temp\ReadMe_copy.txt
+
+ 5 . 파일 입출력 
+ 
+물리적인 파일에 접근해서 파일의 내용에 접근하기 위해서는 자바의 I/O를 
+사용해야 한다. 접근하려는 파일의 종류에 따라서 다음과 같이 사용되는 
+클래스가 달라진다. 
+
+(1) 일반 텍스트 파일 
+일반적인 텍스트 파일인 ".txt" 확장자를 가진 파일에 대한 접근은 char 단위로 
+처리하는 것이 효율적이다. 따라서 FileReader 및 FileWriter 와  같은 Node 
+계열 클래스를 사용하여 처리할 수 있으며, BufferedReader 및 
+PrintWriter 와 같은 Filter 계열 클래스를 데코레이션하여 구현하면 더욱 
+효율적인 파일 입출력을 구현할 수 있다. 
+
+(2) 바이너리 파일 
+이미지 파일과 같은 바이너리 파일에 대한 접근은 byte 단위로만 처리할수 있기 
+때문에 FileInputStream 및 FileOutputStream을 사용하여 처리한다. 
+
+실습하기 11-8 FileReader 이용한 텍스트 파일 내용 출력 
+
+c:\Temp 폴더에 ReadMe.txt 파일을 복사하여 저장.
+
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_8
+ 
+ package ch11.IO;
+
+import java.io.FileNotFoundException;     
+import java.io.IOException;  
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.File;
+public class Ex11_8 {
+ public static void main( String [] args ) {
+
+	   BufferedReader buffer = null;
+    try{
+      File f = new File( "C:\\Temp", "ReadMe.txt" );
+      //c:\Temp 폴더에 ReadMe.txt 파일에 대한 File 객체를 생성
+      FileReader reader = new FileReader(f);
+      // 텍스트 파일의 내용을 읽기 위해서 FileReader 클래스를 사용한다. 
+      // 파일이 존재하지 않을 때 발생하는 FileNotFoundException
+      // 예외를 처리해야 한다. 
+      buffer = new BufferedReader( reader );
+      //new File(파일명)-> new FileReader -> new BufferedReader
+      String str = buffer.readLine();
+      //readLine() 메소드를 사용하여 한 행을 읽는다. 
+      while( str != null ){
+        System.out.println( str );
+        str = buffer.readLine();
+        // readLine() 메소드는 행의 끝이면 null 값을 리턴한다. 따라서 
+        // null 값이 아닐 때까지 while 반복문에 의해 파일의 내용을 반복적으로 
+        // 읽고 출력한다. 
+      }
+    }catch(FileNotFoundException e){
+  	  e.printStackTrace();
+    }catch(IOException e){
+  	  e.printStackTrace();
+    }finally{
+  	  try {
+			buffer.close();
+			// close() 메소드를 사용하여 사용했던 자원을 해제.
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+  }
+}
+//
+//ReadMe
+// 2번째 라인
+// 3번째 라인 
+// 파일 입니다.
+
+ 실습하기 11-9 FileWriter 를 이용하여 텍스트 파일에 저장.
+ 키보드로 입력 받은 데이터를 파일로 저장하는 실습 예제.
+ 
+ 프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_9
+ 
+ package ch11.IO;
+
+import java.io.FileWriter;     
+import java.io.IOException;  
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+
+public class Ex11_9 {
+  public static void main( String [] args ) {
+
+   BufferedReader buffer = null;
+   PrintWriter out = null;
+   try{
+     File f = new File( "C:\\Temp", "output.txt" );
+   //c:\Temp 폴더에 output.txt 파일이름으로 입력된 데이터를 저장하기 위한
+     // File 객체를 생성
+     buffer = new BufferedReader(new InputStreamReader(System.in));
+     // 한 행씩 처리하기 위해서 BufferedReader 객체를 생성
+   
+     FileWriter writer = new FileWriter(f);
+     //텍스트 데이터를 파일에 쓰기 위한 FileWriter 객체를 생성.
+     out = new PrintWriter( writer );
+     // 효율적인 데이터 출력을 위해서 Filter 계열인 PrintWriter 객체를 사용.
+     // new File(파일명) -> new FileWriter -> new PrintWriter
+     out.print( buffer.readLine() );
+     // readLine() 메소드를 이용하여 읽은 한 행의 데이터를 PrintWriter
+     // 클래스의 print() 메소드를 이용해서 출력한다. 
+
+   
+   }catch(IOException e){ 
+ 	   e.printStackTrace();
+   }finally{
+ 	  try {
+	    buffer.close();
+       out.close();
+    // close() 메소드를 사용하여 사용했던 자원을 해제.
+	   } catch (IOException e) {
+	     e.printStackTrace();
+	   }
+   }
+ }
+}
+// 콘솔 창에 데이터 입력 하면 파일 생성.
+
+실습하기 11-10 FileInputStream 과 FileOutputStream을 이용하여 이미지 파일 복사하기
+
+c:\Temp 폴더에 ex1.jpg 파일을 복사하여 , ex1_copy.jpg 파일을 생성. 
+
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_10
+ 
+ package ch11.IO;
+
+import java.io.IOException;  
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
+public class Ex11_10{
+ public static void main( String [] args ) {
+
+	   FileInputStream fis  = null;
+	   FileOutputStream fos = null;
+	   
+ try{
+    File readFile = new File( "C:\\Temp", "ex1.jpg" );
+    //c:\Temp 폴더 내에 읽을 파일 ex1.jpg 파일을 위한 File 객체 생성.
+    // 지정된 파일 없으면 FileNotFoundException 예외 발생. 
+    File writeFile = new File( "C:\\Temp", "ex1_copy.jpg" );
+    // c:\Temp 폴더 내에 출력 파일인 ex1_copy 파일을 위한 File 객체를 생성.
+    int size = (int)readFile.length();
+    //읽을 파일인 ex1.jpg 파일의 크기를 확인하여 변수 size에 저장.
+    byte [] readByte = new byte[size];
+    // 변수 size 의 값을 이용하여 byte 배열을 생성. 
+    // 입력하는 파일의 크기만큼 byte 배열을 생성.
+     fis = new FileInputStream( readFile);
+     // 이미지 파일을 읽기 때문에 byte 단위의 처리를 담당하는 FileInputStream 
+     // 객체를 생성.
+     fos = new FileOutputStream( writeFile,false );
+     // byte  단위로 파일에 출력하기 위한 FileOutputStream 객체를 생성. 
+     // 지정된 파일이 있으면 기존 파일에 덮어쓰게 되고, 파일이 없으면 
+     // 자동 생성. 만약 지정된 파일이 있을 때 덮어 쓰지 않고 내용을 추가할려면,
+     // 두 번째 인자인 false 값을 true 로 변경 
+     // 이미지 파일을 읽어서 byte 배열에 저자이. 
+     // byte 배열에 저장된 데이터를 출력.
+    int n = fis.read( readByte );
+    fos.write( readByte );
+  
+  }catch(IOException e){
+  	e.printStackTrace();
+  }finally{
+  	try {
+  		  fis.close();
+  	      fos.close();
+  	    // close() 메소드를 사용하여 사용했던 자원을 해제.
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+  }
+}
+}
+// 실행하면 파일 생성됨. 
+
+실습하기 11-11 자바의 기본 데이터를 직접 입출력하기 
+자바 기본형을 직접 입출력하는 실습 예제
+
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_11
+
+package ch11.IO;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+  public class Ex11_11 {
+   public static void main( String [] args ) {
+ 
+       String FILENAME = "values.dat";
+       
+       DataOutputStream dos = null;
+     try{
+    	 dos = new DataOutputStream( new FileOutputStream( FILENAME ));
+    	 // 파일에 자바의 기본 데이터를 출력하기 위해서 Filter 계열의 
+    	 //DataOutputStream 클래스의 객체를 생성 
+        dos.writeInt( 2012 );
+        dos.writeUTF( "UTF-8 형식으로 저장!" );
+        dos.writeFloat( 1.0F );
+        // 자바의 기본 데이터를 출력할수 있는 writeInt(),writeUTF(),writeFloat()
+        // 메소드를 사용 
+       }catch(IOException e){
+    	   e.printStackTrace(); 
+       }finally{
+    	   try {
+			dos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+       }
+
+     DataInputStream dis  = null;
+     try {
+    	dis = new DataInputStream( new FileInputStream( FILENAME ));
+    	// 자바의 기본 데이터를 입력할수 있는 Filter 계열의 DataInputStream
+    	// 클래스의 객체를 생성
+        System.out.println( dis.readInt() );
+        System.out.println( dis.readUTF() );
+        System.out.println( dis.readFloat() );
+        //자바의 기본 데이터를 읽을 수 있는 readInt(),readUTF(),readFloat() 메소드
+        // 사용 
+      }catch( IOException e){
+    	  e.printStackTrace(); 
+      }finally{
+    	  try {
+			dis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+      }
+   }
+ }
+ //
+ 2012
+UTF-8 형식으로 저장!
+1.0
 
  
+ 6. 객체 직렬화 
  
+ 일반적으로 힙(Heap) 메모리에 생성된 객체의 인스턴스는 비영속성을 
+ 가진다. 파일이나 데이터베이스에 저장된 데이터처럼 영속성을 가지기 위해서 
+ 자바에서는 '객체 직렬화(Object Serialization)' 기능을 제공한다. 
+ 객체 직렬화를 적용하면 메모리에 생성된 인스턴스 정보를 파일이나 
+ 네트워크를 통해서 영속성을 유지할 수 있다. 
  
+ 객체 인스턴스의 영속성을 유지하기 위한 객체 직렬화를 명시하는 방법. 
  
+ ex) public class 클래스명 implements Serializable{ }
+ 
+java.io.Serializable 인터페이스를 구현한 클래스 파일은 객체 직렬화가 가능. 
+일반적으로 인터페이스에는 추상 메소드가 있어서 인터페이스를 구현하는 
+클래스 파일에서는 반드시 추상 메소드를 오버라이딩해야 하지만 Serializable
+인터페이스는 추상 메소드가 없다. 단지 객체 직렬화가 가능한 클래스임을 
+알려주는 마커 기능을 가지는 용도로 사용하는 마커(Marker) 인터페이스이다. 
+ 이것은 클래스의 인스턴스 변수에 저장된 데이터의 영속성을 위해서 
+ 파일이나 네트워크로 전송할수 있다는 것이다. 
+ 
+시스템에서 제공된 대부분의 API는 모두 직렬화가 가능한 클래스들이다. 
+이것은 미리 Serializable 인터페이스를 구현했다는 것이며 대표적으로 
+String, ArrayList 등이다. 이런 이유로 문자열을 파일에 저장하거나 채팅하는 
+것처럼 네트워크로 문자를 전송할 수 있다. 
+
+객체 직렬화를 위해서 다음 I/O 클래스를 사용한다. 
+
+ObjectInputStream 클래스 
+ObjectOutputStream 클래스 
+
+ 다음은 객체 직렬화의 특징 
+- Serializable 인터페이스를 사용.
+- 메모리에 생성된 인스턴스를 내부적으로 byte 단위로 처리.
+- byte 단위로 처리하기 때문에 반드시 ObjectInputStream과 ObjectOutputStream
+을 사용해야 함. 
+- 연쇄적으로 발생한다. 이것은 직렬화 되는 인스턴스 변수가 참조하는 객체 까지도 
+연쇄적으로 객체 직렬화 된다는 의미.
+- 대부분의 API는 모두 객체 직렬화 가능한 클래스들이다. 
+- 객체 직렬화에서 제외시키는 방법은 transient 키워드를 명시하면 된다. 
+
+
+
+
+실습하기 11-12 객체 직렬화 작성하기
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Person
+
+
+package ch11.IO;
+
+import java.io.Serializable;// Serializable 인터페이스를 구현하는 Person클래스 작성
+
+public  class Person implements Serializable {
+    String name;
+    int age;
+// 인스턴스 변수로 name과 age를 정의. 만약 transient 지정자를 사용하면 
+    // 직렬화에서 제외.ㅣ name을 직렬화에서 제외한다면 다음처럼 
+    // transient String name;
+ public Person( String name , int age ) {
+    this.name = name;
+    this.age = age;
+    // 인스턴스 변수를 초기화할 생성자를 작성.
+ }
+ public String getName(){
+    return name;
+    // 인스턴스 변수에 대한 Getter 메소드를 작성한다.
+ }
+ public int getAge(){
+   return age;
+ }
+}//end class   
+ 
+ 실습하기 11-12 객체 직렬화 작성하기
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_12 
+ 
+ Person 클래스를 객체 직렬화 하는 실습 예제.
+ 직렬화 Ex11_12 
+ 역직렬화 Ex11_12_1 로 구성
+
+package ch11.IO;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+
+public class Ex11_12 {
+ public static void main( String [] args ) {
+
+	   ObjectOutputStream oos = null;   
+ try{
+   Person p = new Person("홍길동", 20 );
+   // 문자열 홍길동과 정수값 20의 데이터를 가진 Person 클래스의 객체를 생성.
+   File f = new File( "C:\\Temp" , "serial.dat" );
+   // 객체를 직렬화하여 파일로 저장하기 위해 c:\Temp 디렉토리에 serial.dat
+   // 파일명으로 File 객체를 생성한다.
+   FileOutputStream fos = new FileOutputStream(f);
+   // byte 단위의 처리를 해야 하기 때문에 FileOutputStream 객체를 생성.
+   oos = new ObjectOutputStream(fos);
+   oos.writeObject(p);
+   //객체 직렬화를 위해서 ObjectOutputStream 객체를 생성하고,
+   // writeObject() 메소드를 이용해서 Person 객체를 파일에 출력한다. 
+
+  }catch(IOException e){
+  	e.printStackTrace();
+  }finally{
+  	try {
+			oos.close();
+			   // close() 메소드를 사용하여 사용했던 자원을 해제.
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+  }
+ }
+}
+//
+실행 후 c:\Temp 폴더 안에 serial.dat 파일이 생성.
+바이너리 파일이기 때문에 텍스트 에디터로 내용 못봄. 
+
+ 실습하기 11-12 객체 직렬화 작성하기
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_IO 생성. 
+ 패키지 : ch11.IO
+ 클래스 이름 :  Ex11_12 _1
+
+ package ch11.IO;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+
+public class Ex11_12_1 {
+ public static void main( String [] args ) {
+
+ObjectInputStream ois = null;
+ try{ // 파일을 읽어올 경로로 c:\Temp 폴더내에 serial.dat 파일명으로 File 객체 
+	 // 생성. 
+   File f = new File( "C:\\Temp" , "serial.dat" );
+   // byte 단위로 처리해야 하기 때문에 FileInputStream 객체를 생성.
+   FileInputStream fis = new FileInputStream(f);
+   ois = new ObjectInputStream(fis);
+   //역직렬화를 위해서 ObjectInputStream 객체를 생성하고 
+   // readObject() 메소드를 이용해서 파일에 직렬화된 Person 객체를 읽어 들인다. 
+   Person p = (Person)ois.readObject();
+   System.out.println(p.getName() + " " + p.getAge());
+   // Person 객체의 Getter 메소드를 사용하여 원하는 정보를 출력 .
+  }catch(IOException e){ 
+  	e.printStackTrace();
+  }catch(ClassNotFoundException e){ 
+	  e.printStackTrace();
+	}finally{
+		try {
+			ois.close();
+			 // close() 메소드를 사용하여 사용했던 자원을 해제.
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+}
+//파일로 저장된 데이터를 이용하여 역직렬화를 수행하고,
+객체의 인스턴스 변수값을 출력한 것.
+
+홍길동 20
+
+===============================
+ 
+ 10장 다중 데이터 처리 
+ 
+ 학습목표
+- 자바 배열의 생성 및 사용법에 관하여 학습.
+- for~each 문의 사용법에 관하여 학습.
+- 컬렉션 자료 구조를 이용한 데이터 관리에 관하여 학습.
+- HashSet 클래스를 이용한 데이터 관리에 관하여 학습.
+- ArrayList 클래스를 이용한 데이터 관리에 관하여 학습.
+- 제너릭(Generic)을 이용한 컬렉션 사용법에 관하여 학습. 
+- Iterator 와 Enumeration 사용법에 관하여 학습.
+- Hashtable 클래스를 이용한 데이터 관리에 관하여 학습 
+- Properties 클래스를 이용한 데이터 관리에 관하여 학습 
+- Arrays 클래스와Collections 클래스에 관하여 학습.
+-Comparator 인터페이스를 이용하여 사용자 클래스의 데이터를 정렬하는 
+방법에 관하여 학습. 
+
+ 1. 배열 - 생략 
+ 2. 컬렉션 (Collection API)
+ 
+ 274 24/55 다중 데이터처리 -컬렉션
+ 
+ 3. Arrays 클래스와 Collections 클래스 
  
  
  

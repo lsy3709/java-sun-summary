@@ -1,0 +1,82 @@
+hrdi7661@
+사전 d={‘aaa’:1, ‘eee’:5, ‘bbb’:2, ‘ddd’:4, ‘ccc’:3}에 존재하는 값들(정수값)의
+ 오름차순 기준으로 사전에 있는 
+ 각아이템들을 정렬하여 리스트 형태로 출력하는 프로그램을 작성하세요 
+ (리스트 내의 각 아이템 원소들은 튜플로
+표현합니다.).
+
+d = {'aaa':1, 'eee':5, 'bbb':2, 'ddd':4, 'ccc':3}
+def f(item):
+    return item[1]
+items = d.items()
+items.sort(key=f)
+print items
+
+
+
+
+리눅스를 기준으로 루트 디렉토리(‘/’)로 부터 모든 하위 디렉토리들을 재귀적으로 방문하면서 ‘.py’로 확장자를
+지닌 각각의 파일들에 대한 전체 경로를 출력하는 프로그램을 작성하세요.
+import os
+for root, dirs, files in os.walk('/'):
+for fname in files:
+    if os.path.splitext(fname)[1] == '.py':
+        fullpath = os.path.join(root, fname)
+        print fullpath
+		
+		
+		
+
+임의의 문자열로 이루어진 리스트를 인자로 받아서 각 문자열 마지막에 ‘!’를 덧붙인 새로운 리스트를 반환하는
+함수 myfunc(t) 를 정의하고 테스트 하는 프로그램을 작성하세요.
+* 정답 확인의 기회는 총 3번입니다.
+
+def myfunc(t):
+res = []
+    for el in t:
+        res.append(el + '!')
+    return res
+l = ['Hello', 'Python', 'Programming', 'Language']
+print myfunc(l)
+
+
+
+주어진 리스트 t =[1, 2, 3, 4, 5, 6, 7, 8, 9]에 대해 홀수만 필터링하여 그러한 홀수의 총합을 구하는 프로그램을
+작성하되, 람다 함수, filter(), reduce() 내장함수를 활용하세요.
+* 정답 확인의 기회는 총 3번입니다.
+
+실습화면
+
+모범답안
+
+t = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+print reduce(lambda x, y: x + y,
+filter(lambda x: x % 2, t))
+
+25
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		

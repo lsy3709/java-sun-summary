@@ -31448,20 +31448,1240 @@ ObjectInputStream ois = null;
  
  274 24/55 다중 데이터처리 -컬렉션
  
+2.1 컬렉션 (Collection) 
+
+자료 구조는 컴퓨터를 이용하여 데이터를 효율적으로 관리하기 위한 
+저장 방식 및 검색과 관련된 내용으로 구성된 교육 과목.
+데이터를 관리하는 여러 가지 저장 방식이 존재한다. 이러한 데이터를 
+관리하는 여러 가지 저장방식을 자바의 클래스로 구현한 것이 컬렉션
+ (Collection) 이다. 자바의 컬렉션은 데이터를 저장하는 여러 가지 
+ 방식 중에서 선택할 수 있는 또하나의 방법이 될수 있다. 
+
+자바의 컬렉션과 관련된 클래스의 상속 관계(계층구조)이다. 
+
+<<Collection>> 하위에 
+<<Set>> , <<List>> , <<Map>>
+
+<<Set>> 하위에 
+HashSet , SortedSet 
+
+<<List>> 하위에 
+ArrayList , Vector 
+
+<<Map>> 하위에 
+HashMap , Hashtable 
+
+Hashtable 하위에 
+Properties 
+
+컬렉션의 최상위 클래스는 Collection 인터페이스이다. 
+인터페이스 내에 add(), remove() , size() 등 데이터 저장 및 관리와 
+관련된 추상 메소드가 선언되어 있다. 
+
+Collection 인터페이스 하위로는 Set 인터페이스와 List 인터페이스가 
+제공된다. 
+Set 인터페이스 계열의 특징은 저장되는 데이터에 순서가 없어 같은 데이터의 
+중복 저장이 불가. 실제 구현 된  HashSet 과 SortedMap 클래스들을 이용하여 
+Set 계열을 사용 가능. 
+
+List 계열의 특징은 저장되는 데이터에 순서가 존재하기 때문에 같은 
+데이터의 중복 저장이 가능하다. 실제 구현된 ArrayList 클래스를 주로 많이 
+사용. 
+
+Set 계열과 List 계열은 모두 실제 데이터만 저장하는 자료 구조 형태지만 
+Map 계열은 Key/Value 쌍으로 저장하고 이후에 Key 를 이용해서 
+Value 를 얻는 방법으로 구현된 자료 구조이다. 
+
+Key 는 중복을 허용하지 않고 Value 는 중복을 허용한다. 또한, 저장 순서가 없다.
+Map 도 인터페이스 이기 때문에 실제 구현된 HashMap, Hashtable 클래스를 
+이용하고 Hashtable 의 하위 클래스로 Properties 클래스가 제공된다. 
+
+컬렉션 API 의 특징 
+- 배열과 다르게 하나의 컬렉션에는 서로 다른 데이터형의 저장이 가능. 
+- 참조 데이터형만 저장 가능. 기본 데이터형은 Wrapper 클래스를 이용하거나 
+오토박싱 으로 저장 할수 있다. 
+- ArrayList, HashSet, HashMap, Properties 와 같은 다양한 형식의 자료구조가 제공 
+- 컬렉션의 크기는 size() 메소드를 사용하여 구할수 있다. 
+- Iterator 와 Enumeration 이라는 특별한 인터페이스와 향상된 for 문을 
+사용하여 데이터를 쉽고 효율적으로 얻어올 수 있다. 
+- 객체인 데이터를 저장할 때마다 크기가 자동으로 늘어난다. 
+
+오토박싱, 언박싱 
+오토박싱 이란 기본 데이터형을 컬렉션에 직접 저장해도 컴파일러가 자동으로 
+Wrapper 클래스로 변환 후에 저장되는 것을 의미. 
+저장된 값을 얻어올 때도 직접 기본 데이터형으로 얻어올수 있는데 
+이것을 언박싱이라고 한다. 
+
+-Collection 인터페이스 대표적인 메소드 
+
+boolean add(Object o) : 지정된 객체 또는 Collection의 객체들을 Collection에 추가 
+
+void clear() : Collection의 모든 객체를 삭제 
+
+boolean isEmpty() : Collection이 비어 있는지 확인 
+
+int size() : Collection 에 저장된 객체의 개수 
+
+Object [] toArray() : Collection에 저장된 객체를 배열로 변환 
+
+- Map 인터페이스 대표적인 메소드
+
+메소드 : 설명 
+
+put(Object key, Object value) putAll(Map m) : key 에 해당하는 value  객체를 저장 
+
+void clear() : Map 의 모든 객체를 삭제 
+
+boolean isEmpty() : Map이 비어 있는지 확인 
+
+int size() : Map에 저장된 객체의 개수 
+
+Set keySet() : Map에 저장된 모든 key 객체를 Set 계열로 반환 
+
+
+  실습하기 10-11 HashSet 클래스를 이용한 데이터 처리하기 
+ 
+ Set 계열의 특징은 데이터를 중복해서 저장할수 없고, 순서가 없다.
+ 
+프로젝트 유형 Java Project 로 하고 ,
+ 프로젝트 이름  Java_Collection 생성. 
+ 패키지 : ch10.Collection
+ 클래스 이름 :  Ex10_11
+ !
+package ch10.Collection;
+
+import java.util.HashSet;     
+public class Ex10_11{
+ public static void main( String [] args ) {
+   
+      HashSet  set = new HashSet();//Set 인터페이스의 구현 클래스인 
+      // HashSet 클래스의 객체를 생성
+      set.add( "홍길동");
+      set.add( new Integer(123 )); //Wrapper 클래스 
+      set.add( new Float( 3.14F )); //Wrapper 클래스 
+      set.add( 234 );
+      //서로 다른 데이터형을 가진 값을 add() 메소드를 이용하여 저장.
+      // 컬렉션은 참조 데이터형만 저장 할수 있다. 
+      // 기본 데이터형은 Wrapper 클래스를 사용하거나, 오토박싱이용.
+
+      set.add( "홍길동");
+      set.add( new Integer(123 ));
+      set.add( new Float( 3.14F ));
+      set.add( 234 );
+      // 동일한 데이터를 중복 저장. 
+
+      System.out.println( "데이터 출력: " + set.toString() );
+      //HashSet의 참조 변수인 set의 내용을 출력. 데이터는 중복 안되고
+      // 데이터를 추가하는 순서와 관계없이 저장되는 것. 
+  }
+}
+//
+데이터 출력: [홍길동, 234, 123, 3.14]
+
+실습하기 10-12 ArrayList 클래스를 이용한 데이터 저장하기
+
+List 계열의 특징은 데이터가 중복 저장이 가능, 저장되는 순서가 있다. 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_12
+ !
+ package ch10.Collection;
+
+import java.util.ArrayList;      
+public class Ex10_12{
+ public static void main( String [] args ) {
+   
+      ArrayList  list = new ArrayList();
+    //List 인터페이스의 구현 클래스인 
+      // ArrayList 클래스의 객체를 생성
+      list.add( "홍길동");
+      list.add( new Integer(123 ));
+      list.add( new Float( 3.14F ));
+      list.add( 234 );
+      //서로 다른 데이터형을 가진 값을 add() 메소드를 이용하여 저장.
+      // 컬렉션은 참조 데이터형만 저장 할수 있다. 
+      // 기본 데이터형은 Wrapper 클래스를 사용하거나, 오토박싱이용.
+
+      list.add( "홍길동");
+      list.add( new Integer(123 ));
+      list.add( new Float( 3.14F ));
+      list.add( 234 );
+   // 동일한 데이터를 중복 저장. 
+
+      for( int i=0 ; i < list.size() ; i++ ){
+       System.out.println("데이터 출력 : " + list.get(i) );
+       // ArrayList는 배열과 같이 인덱스를 이용하는 get() 메소드를 사용하여 
+       // 데이터를 얻어올수 있다. ArrayList 의 크기만큼 반복문을 실행. 
+       // 출력 결과는 중보 데이터가 저장되어 있고, 데이터를 추가한 순서에 따라
+       // 저장된 것을 확인. 
+       
+      }
+  }
+}
+//데이터 출력 : 홍길동
+데이터 출력 : 123
+데이터 출력 : 3.14
+데이터 출력 : 234
+데이터 출력 : 홍길동
+데이터 출력 : 123
+데이터 출력 : 3.14
+데이터 출력 : 234
+
+
+ 실습하기 10-13 ArrayList 클래스를 이용한 데이터 삽입,추가,삭제,수정하기
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_13
+ 
+ package ch10.Collection;
+
+import java.util.ArrayList;      
+public class Ex10_13{
+ public static void main( String [] args ) {
+   
+      ArrayList  list = new ArrayList();
+    //List 인터페이스의 구현 클래스인 
+      // ArrayList 클래스의 객체를 생성
+      list.add( "홍길동");
+      list.add( "이순신");
+      list.add( "강감찬");
+      list.add( "유관순" );
+      // 문자열을 add() 메소드를 이용하여 ArrayList 클래스의 객체인 list에 저장.
+
+      //데이터 삽입
+      list.add(1,"정도전");
+      // 인덱스 1의 위치에 문자열"정도전"을 삽입.
+      // list 객체에는 문자열이 홍길동,정도전,이순신,강감찬,유관순으로 저장.
+      
+      //데이터 수정
+      list.set(0, "임꺽정");
+      // 인덱스 0 위치에 있는 값을 임꺽정으로 수정. 따라서 
+      // 임꺽정,정도전,이순신,강감찬,유관순으로 저장.
+      
+      // 인덱스를 이용한 데이터 삭제
+      list.remove(4);
+      
+    
+      // 값을 이용한 데이터 삭제
+      list.remove("이순신");
+      for( int i=0 ; i < list.size() ; i++ ){
+          System.out.println("데이터 출력 : " + list.get(i) );
+         }
+    
+  }
+}
+
+//
+데이터 출력 : 임꺽정
+데이터 출력 : 정도전
+데이터 출력 : 강감찬
+
+ 
+2.2 DTO 패턴과 컬렉션 API를 이용한 효율적인 데이터 관리 
+
+일반적으로 대량의 데이터를 효율적으로 관리하기 위해서는 DTO 클래스와 
+컬렉션 API를 함께 사용한다. 
+DTO (Data Transfer Object) 클래스는 데이터를 효율적으로 전송 및 
+관리 하기 위해서 사용되는 클래스를 의미.
+넓게는 네트워크 환경에서, 좁게는 메소드 간에 데이터를 전송할 때 
+유용하게 사용되는 클래스로 DTO 패턴이라고 부른다. 
+
+네트워크 및 메소드 간에 데이터를 전송할 때 여러 번 데이터를 나누어 
+전송하는 것보다는 한꺼번에 전송하는 것이 효율적.
+한꺼번에 저장 및 전송하는 방법으로 DTO 클래스와 컬렉션을 같이 사용.
+
+ 실습하기 10-14 DTO 클래스를 이용한 데이터 처리 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Person_DTO
+ 
+package ch10.Collection;
+
+public class Person_DTO{
+    String name;
+    int age;
+    String address;
+    public String getName() { return name; } 
+    public void setName(String name) {
+        this.name = name;
+    }
+    public int getAge() { return age; }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+    public String getAddress() { return address; }
+
+     public void setAddress(String address) {
+       this.address = address;
+   }
+
+   public Person_DTO(){}
+   public Person_DTO( String name , int age , String address ){
+       this.name = name;
+       this.age = age;
+       this.address = address;
+   }
+}
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  PersonTest
+
+import java.util.ArrayList;      
+public class PersonTest {
+
+   public ArrayList getAllPerson(){
+       ArrayList list = new ArrayList();
+       list.add( new Person_DTO( "홍길동", 20 ,"서울"));
+       list.add( new Person_DTO( "이순신", 40 ,"전라"));
+       list.add( new Person_DTO( "유관순", 17 ,"경기"));
+       return list;
+   }    
+}
+
+ 여러가지 추가 작업이 필요하지만, 코드를 최대한 간략하게 하려고 
+ getAllPerson() 메소드만 추가. getAllPerson() 메소드를 한번 호출해서 
+ 필요한 데이터를 얻기 위해서 다음과 같은 작업이 필요 
+ 1) 데이터를 저장하기 위한 Person_DTO 클래스 정의 
+ 2) 데이터 개수만큼 Person_DTO 클래스의 객체를 생성하고 데이터를 저장. 
+ 3) 여러 개의 Person_DTO 클래스를 하나로 관리하기 위해서 ArrayList 클래스의 
+ 객체를 생성하고 Person_DTO 클래스의 객체들을 저장. 
+ 4) getAllPerson_DTO 메소드의 끝부분에서 ArrayList의 객체인 list 를 리턴. 
+ getAllPerson() 메소드를 호출하는 곳에서는 한번에 필요한 데이터를 모두 얻어올수 
+ 있다. ArrayList 객체에 저장된 데이터를 얻기 위해서는 반드시 저장된 데이터 형인 
+ Person_DTO 클래스로 형변환 해야 한다. 
+ 
+282 32/55 
+
+앞서 작성한 클래스를 이용하는 핸들링 클래스 추가. 
+클래스 이름은 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_14
+
+package ch10.Collection;
+
+import java.util.ArrayList;     
+public class Ex10_14{
+ public static void main( String [] args ) {
+   
+       PersonTest  t = new PersonTest(); //PersonTest 클래스를 객체 생성
+       ArrayList list = t.getAllPerson();
+       //PersonTest 클래스의 getAllPerson() 메소드를 호출.
+       // 이 메소드는 발생한 데이터를 DTO 클래스의 객체에 저장하고
+       // 마지막으로 ArrayList 의 객체에 최종적으로 저장한 후에
+       // 리턴하는 메소드. 모든 데이터는 ArrayList에 저장. 
+       
+       for( int i=0;  i < list.size() ; i++ ){
+          Person_DTO p = (Person_DTO)list.get(i);
+          String name = p.getName();
+          int age = p.getAge();
+          String address = p.getAddress();
+          System.out.println(name+" "+age+" "+address);
+          // ArrayList 의 크기만큼 반복처리. 인덱스와 get() 메소드를 
+          // 이용하여 데이터를 얻어올 때는 객체의 형변환에 주의해야 한다. 
+          // 저장된 데이터의 타입인 Person_DTO 로 형변환한다. 
+          // 형변환 한 뒤에 메소드를 사용하여 저장된 데이터를 얻어옴.
+       }
+    }
+}
+//
+홍길동 20 서울
+이순신 40 전라
+유관순 17 경기
+
+2.3 제너릭(Generics)
+
+ArrayList 와 같은 컬렉션을 사용할 때는 주의할 점이 있다. 데이터를 저장하고 
+얻어 올 때 반드시 저장된 데이터형으로 형변환을 해야 한다. 
+만약, 저장된 데이터형으로 형변환을 하지 않으면 컴파일 에러가 발생한다. 
+또한, 형변환을 했어도 저장되는 시점에 잘못된 
+데이터가 저장되면 데이터형이 일치하지 않아서 실행할 때 에러가 발생.
+즉, 잘못된 데이터가 저장된 것을 컴파일 시점이 아닌 실행 시점에서 
+알수 있다는 것이다. 이러한 문제점을 해결하기 위해서 
+제너릭을 사용.
+ 
+장점 
+- 데이터를 저장할 때 저장된 데이터형을 명시하기 때문에 가독성이 높다. 
+- 지정된 데이터형이 아닌 다른 데이터를 저장하면 컴파일 시점에 에러가 발생. 
+따라서 잘못된 데이터를 저장하면 프로그램을 개발하는 시점에서 문제를 해결
+할수 있다. 
+- 데이터를 얻어올 때 지정된 데이터형으로 형변환을 할필요가 없다. 
+
+제너릭 사용하는 방법. 
+ex) 
+컬렉션<저장데이터형> 변수 = new 컬렉션<저장데이터형>();
+
+ex)
+HashSet<String> set = new HashSet<String>();
+ArrayList<person> list = new ArrayList<Person>();
+
+<> 를 이용하여 컬렉션에 저장되는 데이터형을 명시하기 때문에 
+반드시 지정된 데이터만 저장 할수 있다. 
+
+실습하기 10-15 제너릭을 이용한 데이터 처리 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_15
+
+package ch10.Collection;
+
+import java.util.ArrayList;     
+
+class Man{
+   String name;
+   int age;
+
+    public String getName(){ return name; }
+    public int getAge(){ return age; }
+
+    public Man(String name, int age){
+          this.name = name;
+          this.age = age;
+     } //Man 클래스 정의 
+ }
+public class Ex10_15{
+ public static void main( String [] args ) {
+   // Man 클래스의 객체를 ArrayList 클래스의 객체에 저장하기 위해서 제너릭을 사용.
+	 //ArrayList 의 객체에 저장되는 데이터는 Man 클래스의 객체만 가능하며
+	 // 이외의 데이터를 저장할 때는 컴파일 에러가 발생. 
+       ArrayList<Man> list = new ArrayList<Man>();
+       list.add( new Man("홍길동", 20) );
+       list.add( new Man("이순신", 44) );
+       // Man 클래스의 객체를 생성해서 add() 메소드를 이용하여 Man 클래스의 객체를 
+       // ArrayList 의 객체에 저장. Man 클래스의 객체가 아닌 String 객체를 저장하기
+       // 때문에 컴파일 에러 발생. 
+       
+       //list.add("유관순“);
+       
+      for( int i=0;  i < list.size() ; i++ ){
+          Man p = list.get(i);
+          String name = p.getName();
+          int age = p.getAge();
+          System.out.println(name+" "+age);
+          // ArrayList 의 크기만큼 반복문을 실행. 
+          // get() 메소드에서 얻어온 객체는 제너릭을 이용했기 때문에 형변환이
+          // 필요 없다. 
+      }
+
+      for( Man man : list ){
+         String name = man.getName();
+         int age = man.getAge();
+         System.out.println("향상된 for 문: " + name + " " + age );
+      }
+    }
+}
+//
+홍길동 20
+이순신 44
+향상된 for 문: 홍길동 20
+향상된 for 문: 이순신 44
+
+p285 35/55 제너릭
+
+제너릭 자료형을 특정 자료형으로 한정하지 않고 임의의 자료형으로 지정할 
+수 있도록 한다. "<?>" 문자로 와일드카드를 사용할수 있다. 
+
+ex)
+List <String> list = new ArrayList<String>();
+List <Integer> list2 = new ArrayList<Integer>();
+
+String 형을 저장하는 List<String> 제너릭과 Integer 형을 저장하는 
+List<Integer> 제너릭을 모두 처리할수 있는 임의의 제너릭은 
+List<?> 와 같이 "<?>"를 이용한 와일드카드 를 사용하는 것. 
+
+실습하기 10-16 ? 와일드카드를 이용한 제너릭(Generic)사용
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_16
+
+ package ch10.Collection;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Ex10_16 {
+	public static void main(String[] args) {
+
+		List<String> list = new ArrayList<String>();
+		//String 을 저장하는 List<String> 형의 제너릭을 생성하고 데이터를 저장.
+		// printData() 메소드를 호출하여 파라미터로 제너릭을 전송한다.
+		list.add("홍길동");
+		list.add("이순신");
+		printData(list);
+		
+		List<Integer> list2 = new ArrayList<Integer>();
+		list2.add(100);
+		list2.add(200);
+		printData(list2);
+		//정수형 을 저장하는 List<Integer> 형의 제너릭을 생성하고 데이터를 저장.
+		// printData() 메소드를 호출하여 파라미터로 제너릭을 전송한다.
+		
+	}
+	
+	public static void printData( List<?> list){
+		// List<String> 제너릭과 List<Integer> 제너릭을 모두 처리하기 위하여
+		// "<?>" 와일드 카드를 사용한 List<?> 형으로 메소드 인자를 설정. 
+		for(Object obj : list){
+			System.out.println(obj);
+		}
+	}
+}
+//
+홍길동
+이순신
+100
+200
+
+"<?>"  와일드카드만 사용한 경우에는 임의의 모든 데이터형을 처리 가능. 
+만약 상속 관계의 클래스만으로 한정하고자 할 때는 super와 extends 키워드를 사용. 
+
+상속 관계일 때 같거나 또는 자식 타입으로 한정하는 방법.
+< ? extends T> 
+: T 또는 T 의 자식만이 제너릭 자료형으로 사용 가능하다.
+
+ex)
+List<Man> list = new ArrayList<Man>();
+List<Woman> list2 = new ArrayList<Woman>();
+
+public static void printData(List<? extends Person> list)
+Person 또는 Person 의 자식 타입 
+
+Man 클래스와 Woman 클래스가 Person 클래스를 상속하는 클래스라고 가정할 때, 
+위의 예는 Person 클래스 및 Person 클래스와 상속 관계에 있는 자식 타입(Man,
+Woman) 만이 제너릭으로 설정 할수 있다. 
+
+상속 관계일 때 같거나 부모 타입으로 한정하는 방법.
+< ? super T> 
+: T 또는 T의 부모만이 제너릭 자료형으로 사용 가능. 
+
+ex)
+List<Man> list = new ArrayList<Man>();
+List<Woman> list2 = new ArrayList<Woman>();
+
+public static void printData(List<? super Man> list)
+Man 또는 Man 의 부모 타입 
+
+Man 클래스 그리고 Man 클래스와 상속 관계의 부모 타입인 Person 
+클래스만을 제너릭으로 설정 가능. 
+List<Woman> 제너릭은 에러가 발생. 
+
+실습하기 10-17 <? extends T> 와일드카드를 이용한
+상속 구조의 제너릭(Generic)사용
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_17
+ 
+package ch10.Collection;
+
+import java.util.ArrayList;
+import java.util.List;
+
+class Person_Gen{}
+class Man_Gen extends Person_Gen{}
+class Woman_Gen extends Person_Gen{}
+// Person_Gen 클래스와 Man_Gen, Woman_Gen 클래스 간에 상속 관례로 설정. 
+
+
+public class Ex10_17 {
+	public static void main(String[] args) {
+// Man_Gen 타입의 제너릭을 생성하고 데이터를 출력하기 위해서 
+		// printData() 메소드를 호출. Man_Gen 클래스는 Person_Gen 
+		// 클래스의 자식 타입이기 때문에 < ? extends Person_Gen>
+		// 으로 지정된 제너릭을 사용할수 있다. 
+		
+		List<Man_Gen> list = new ArrayList<Man_Gen>();
+		list.add(new Man_Gen());
+		list.add(new Man_Gen());
+		printData(list);
+// Woman_Gen 타입의 제너릭을 생성하고 데이터를 출력하기 위해서 
+		// printData() 메소드를 호출. Woman_Gen 클래스는 Person_Gen 
+		// 클래스의 자식 타입이기 때문에 < ? extends Person_Gen>
+		// 으로 지정된 제너릭을 사용할수 있다.		
+		List<Woman_Gen> list2 = new ArrayList<Woman_Gen>();
+		list2.add(new Woman_Gen());
+		list2.add(new Woman_Gen());
+		printData(list2);
+		
+		List<String> list3 = new ArrayList<String>();
+		list3.add("홍길동");
+		list3.add("이순신");
+		//printData(list3);
+		// String 타입의 제너릭을 생성하고 데이터를 출력하기 위해서 
+		//printData() 메소드를 호출한다. 
+		//String 클래스는 Person 클래스의 자식 타입이 아니므로 컴파일 에러가 발생. 
+		
+	}
+	
+	public static void printData( List<? extends Person_Gen> list){
+		
+		for(Object obj : list){
+			System.out.println(obj);
+		}
+	}
+}
+//
+ch10.Collection.Man_Gen@368239c8
+ch10.Collection.Man_Gen@9e89d68
+ch10.Collection.Woman_Gen@16f65612
+ch10.Collection.Woman_Gen@311d617d
+
+ 실습하기 10-18 <? super T> 와일드카드를 이용한
+상속 구조의 제너릭(Generic)사용
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_18
+ 
+ package ch10.Collection;
+
+import java.util.ArrayList;
+import java.util.List;
+
+class Person_Gene{}
+class Man_Gene extends Person_Gene{}
+class Woman_Gene extends Person_Gene{}
+
+
+ public class Ex10_18 {
+   public static void main(String[] args) {
+	// Man_Gene 타입의 제너릭을 생성하고 데이터를 출력하기 위해서 
+			// printData() 메소드를 호출.
+       List<Man_Gene> list = new ArrayList<Man_Gene>();
+	  list.add(new Man_Gene());
+	  list.add(new Man_Gene());
+	  printData(list);
+	// Woman_Gene 타입의 제너릭을 생성하고 데이터를 출력하기 위해서 
+			// printData() 메소드를 호출. Woman_Gen 클래스는 Man_Gene 
+			// 클래스의 자식 타입이기 때문에 < ? extends Person_Gen>
+			// 으로 지정된 제너릭을 사용할수 있다.	
+	  List<Woman_Gene> list2 = new ArrayList<Woman_Gene>();
+	  list2.add(new Woman_Gene());
+	  list2.add(new Woman_Gene());
+	  //printData(list2);  // 컴파일 에러
+		
+	  List<Person_Gene> list3 = new ArrayList<Person_Gene>();
+	  list3.add(new Person_Gene());
+	  list3.add(new Person_Gene());
+	  printData(list3);  
+	// Person_Gene 타입의 제너릭을 생성하고 데이터를 출력하기 위해서 
+				// printData() 메소드를 호출. Person_Gen 클래스는 Man_Gene 
+				// 클래스의 부모 타입이기 때문에 < ? super Man_Gen>
+				// 으로 지정된 제너릭을 사용할수 있다.	
+		
+	}
+	
+	public static void printData( List<? super Man_Gene> list){
+		
+	   for(Object obj : list){
+	      System.out.println(obj);
+	   }
+	}
+}
+//
+ch10.Collection.Man_Gene@368239c8
+ch10.Collection.Man_Gene@9e89d68
+ch10.Collection.Person_Gene@16f65612
+ch10.Collection.Person_Gene@311d617d
+
+ 2.4 Iterator 와 Enumeration을 이용한 데이터 출력 
+ ArrayList 및 HashSet 과 같은 컬렉션에 저장된 데이터를 일관된 
+ 방법으로 얻어오는 방법으로 2가지 인터페이스가 제공된다. 
+ 
+ 사용 가능한 메소드 
+ java.util.Enumeration : java.util.Iterator : 설명 
+ boolean hasMoreElements() : boolean hasNext() : 컬렉션에 데이터가 있는지 
+ 검사하여, 데이터가 있으면 true 없으면 false 리턴. 
+
+Object nextElement() : Object next() : 컬렉션의 데이터를 리턴. 
+:void remove() : 컬렉션의 데이터를 삭제. 
+
+Enumeration 은 Java 1.0에서 사용되었으며 Iterator는 Enumeration을 
+대체할 목적으로 Java 1.2 버전 부터 추가 되었다. 
+
+실습하기 10-19 Enumeration 을 이용한 데이터 처리
+Enumeration을 이용하여 Vector 클래스에 저장한 데이터를 처리하는 프로그램. 
+
+Vector 클래스는 List 계열이며 ArrayList 와 사용 방법이 비슷하다. 
+Vector 클래스의 elements() 메소드를 사용하여 Enumeration 객체를 참조 가능. 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_19
+
+package ch10.Collection;
+
+import java.util.Vector;     
+import java.util.Enumeration;
+class Person_Gener{
+   String name;
+   int age;
+    public String getName(){ return name; }
+    public int getAge(){ return age; }
+    public Person_Gener(String name, int age){
+          this.name = name;
+          this.age = age;
+     }//Person_Gener 클래스를 정의 
+ }
+
+public class Ex10_19{
+ public static void main( String [] args ) {
+   // add() 메소드를 이용하여 Person_Gener 클래스를 Vector 에 저장.
+	 // Vector 클래스는 ArrayList 와 같은 List 의 하위 클래스.
+       Vector<Person_Gener> v = new Vector<Person_Gener>();
+       v.add( new Person_Gener("홍길동", 20) );
+       v.add( new Person_Gener("이순신", 44) );
+
+      for( Person_Gener p : v ){
+         String name = p.getName();
+         int age = p.getAge();
+         System.out.println("for-each문: " + name + " " + age );
+         //향상된 for 문을 이용하여 Vector 데이터를 출력.
+         // Vector 에 저장된 데이터를 제너릭으로 명시 했기 때문에 
+         // Person_Gener p 로 저장. 
+      }
+
+      Enumeration<Person_Gener> enu = v.elements();
+      while( enu.hasMoreElements() ){
+         Person_Gener p = enu.nextElement();
+          String name = p.getName();
+          int age = p.getAge();
+          
+          // Vector 클래스의 elements() 메소드를 사용하여 제너릭 형식의 
+          // Enumeration 타입을 얻는다. 제너릭을 이용하여 Enumeration 
+          //을 구하면 nextElement() 메소드를 사용할 때는 형변환을 할 필요가 없다.
+          // 반복문과 hasMoreElements() 메소드와 nextElement() 메소드를 사용하여 
+          // 데이터를 출력. 
+        System.out.println("Enumeration 이용: "+ name+" "+age);
+       }
+    }
+}
+//
+for-each문: 홍길동 20
+for-each문: 이순신 44
+Enumeration 이용: 홍길동 20
+Enumeration 이용: 이순신 44
+
+실습하기 10-20 Iterator 을 이용한 데이터 처리
+Iterator을 이용하여 ArrayList 클래스에 저장한 데이터를 처리하는 프로그램. 
+
+ArrayList 와 Set 계열만 사용할 수 있으며 iterator() 메소드를 사용하여 
+Iterator 객체를 참조할수 있다. 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_20
+
+  import java.util.ArrayList;     
+  import java.util.Iterator;
+  class Child{ // Child 클래스 정의 
+     String name;
+     int age;
+      public String getName(){ return name; }
+      public int getAge(){ return age; }
+      public Child(String name, int age){
+            this.name = name;
+            this.age = age;
+       }
+   }
+
+  public class Ex10_20 {
+   public static void main( String [] args ) {
+     
+         ArrayList<Child> list = new ArrayList<Child>();
+         list.add( new Child("홍길동", 11) );
+         list.add( new Child("이순신", 12) );
+
+// add() 메소드를 이용하여 Chile 클래스를 제너릭형으로 ArrayList 에 저장. 
+
+        Iterator<Child> ite = list.iterator();
+		// ArrayList 클래스의 iterator() 메소드를 사용하여 제너릭 형식의 Iterator
+		// 타입을 얻는다. 제너릭을 이용하여 Iterator를 얻으면 next() 메소드를 
+		// 사용할 때 형변환을 할 필요가 없다. 
+		// 반복문과 hasNext() 메소드 및 next() 메소드를 사용하여 데이터를 출력. 
+		
+        while( ite.hasNext() ){
+           Child c = ite.next();
+            String name = c.getName();
+            int age = c.getAge();
+          System.out.println("Iterator 이용: "+ name+" "+age);
+         }
+      }
+  }
+ //
+ Iterator 이용: 홍길동 11
+Iterator 이용: 이순신 12
+
+
+2.5 Map 계열의 데이터 처리 
+
+Map 계열은 데이터를 Key/Value 쌍으로 저장하는 자료구조로 Key 를 이용하여 
+원하는 값을 얻을 수 있다. 반드시 Key는 유일해야 하고 Value 는 중복이 가능.
+만약 Key 가 중복되면 마지막으로 저장한 Key로 덮어쓰게 된다. 
+또한, 다른 어떤 자료 구조보다도 빠른 검색이 가능하며 제너릭 사용도 가능하다.
+
+Map 인터페이스의 하위 클래스인 Hashtable 과 HashMap을 사용 가능. 
+HashMap은 저장되는 순서가 유지 되지 않고, 단 하나의 null 키를 기잘수 있다. 
+반대로 Hashtable은 null 키와 null 값을 저장할수 없다. 
+
+다음은 Map 계열의 컬렉션을 사용하는 방법. 
+
+ex)
+컬렉션 <Object key, Object value > 변수 = new 컬렉션 < Object key, Object value>();
+
+실습하기 10-21 Hashtable 을 이용한 데이터 저장
+
+Hashtable을 이용한 데이터를 처리하는 프로그램으로 Key 와 Value 의 
+데이터형를 String으로 설정한다. Hashtable은 null 값을 허용하지 않는다는 
+것을 기억한다. 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_21
+
+package ch10.Collection;
+
+import java.util.Hashtable;     
+import java.util.Set;
+
+public class Ex10_21 {
+ public static void main( String [] args ) {
+   
+       Hashtable<String,String> map = 
+                      new Hashtable<String,String>();
+       map.put("name","홍길동");
+       map.put("age", "20" );
+       map.put("address", "서울");
+       map.put("name","이순신");
+      // map.put("email", null);
+       
+       System.out.println("이름은 : " + map.get("name") );
+       System.out.println("나이는 : " + map.get("age") );
+       System.out.println("주소는 : " + map.get("address") );
+       
+       
+       // keySet() 메소드 이용한 데이터 출력
+       Set<String> keys = map.keySet();
+       for (String key : keys) {
+		   System.out.println(key+"="+map.get(key));	
+		 }
+    }
+}
+//
+이름은 : 이순신
+나이는 : 20
+주소는 : 서울
+address=서울
+age=20
+name=이순신
+
+실습하기 10-22 HashMap 을 이용한 데이터 저장
+
+HashMap을 이용한 데이터를 처리하는 프로그램으로 Key 와 Value 의 
+데이터형를 String으로 설정한다. HashMap은 null 값을 허용 한다는 
+것을 기억한다. 
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_22
+
+package ch10.Collection;
+
+import java.util.HashMap;    
+
+public class Ex10_22 {
+ public static void main( String [] args ) {
+   
+       HashMap<String,String> map = 
+                      new HashMap<String,String>();
+       map.put("name","홍길동");
+       map.put("age", "20" );
+       map.put("address", "서울");
+       map.put("name","이순신");  //데이터 수정
+       map.put("email", null);
+       map.remove("age");  //데이터 삭제
+       
+       System.out.println("이름은 : " + map.get("name") );
+       System.out.println("나이는 : " + map.get("age") );
+       System.out.println("주소는 : " + map.get("address") );
+       System.out.println("email은 : "+ map.get("email") );
+    }
+}
+//
+이름은 : 이순신
+나이는 : null
+주소는 : 서울
+email은 : null
+
+실습하기 10-23 Properties 를 이용한 시스템 변수값 출력하기 
+
+Properties 클래스를  이용한 시스템 변수를 출력.
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_23
+
+ import java.util.Enumeration;     
+  import java.util.Properties;  
+
+  public class Ex10_23 {
+   public static void main( String [] args ) {
+     
+        Properties props = System.getProperties();
+        Enumeration<?> enu = props.propertyNames();
+        while( enu.hasMoreElements()){
+               String key = (String)enu.nextElement();
+               String value = props.getProperty(key);
+               System.out.println(key+" = " + value);
+           }
+      }
+  }
+//
+java.runtime.name = Java(TM) SE Runtime Environment
+java.vm.version = 11.0.2+9-LTS
+sun.boot.library.path = C:\Program Files\Java\jdk-11.0.2\bin
+java.vm.vendor = Oracle Corporation
+java.vendor.url = http://java.oracle.com/
+path.separator = ;
+java.vm.name = Java HotSpot(TM) 64-Bit Server VM
+sun.os.patch.level = 
+user.script = 
+user.country = KR
+sun.java.launcher = SUN_STANDARD
+java.vm.specification.name = Java Virtual Machine Specification
+user.dir = C:\Users\itwill-cisco1205\eclipse-workspace\Java_Collection
+java.vm.compressedOopsMode = Zero based
+java.runtime.version = 11.0.2+9-LTS
+java.awt.graphicsenv = sun.awt.Win32GraphicsEnvironment
+os.arch = amd64
+java.io.tmpdir = C:\Users\itwill-cisco1205\AppData\Local\Temp\
+line.separator = 
+
+java.vm.specification.vendor = Oracle Corporation
+user.variant = 
+os.name = Windows 10
+sun.jnu.encoding = MS949
+java.library.path = C:\Program Files\Java\jdk-11.0.2\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;C:/Program Files/Java/jdk-11.0.2/bin/server;C:/Program Files/Java/jdk-11.0.2/bin;C:\Program Files\Java\jdk-11.0.2\bin;C:\gradle-5.2.1\bin;C:\apache-maven-3.6.0\bin;C:\Program Files\Wireshark;C:\ProgramData\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\dotnet\;C:\Program Files\Microsoft SQL Server\130\Tools\Binn\;C:\Program Files (x86)\EaseUS\Todo Backup\bin;C:\Program Files\Crucial\Crucial Storage Executive;C:\Program Files (x86)\Brackets\command;C:\Program Files\Git\cmd;C:\Program Files\TortoiseGit\bin;C:\Python27;C:\apache-maven-3.6.0\bin;C:\Users\itwill-cisco1205\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Bandizip\;C:\Users\itwill-cisco1205\AppData\Local\GitHubDesktop\bin;;C:\Users\itwill-cisco1205\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\itwill-cisco1205\Desktop;;.
+jdk.debug = release
+java.class.version = 55.0
+java.specification.name = Java Platform API Specification
+sun.management.compiler = HotSpot 64-Bit Tiered Compilers
+os.version = 10.0
+user.home = C:\Users\itwill-cisco1205
+user.timezone = 
+java.awt.printerjob = sun.awt.windows.WPrinterJob
+file.encoding = UTF-8
+java.specification.version = 11
+user.name = itwill-cisco1205
+java.class.path = C:\Users\itwill-cisco1205\eclipse-workspace\Java_Collection\bin
+java.vm.specification.version = 11
+sun.arch.data.model = 64
+sun.java.command = ch10.Collection.Ex10_23
+java.home = C:\Program Files\Java\jdk-11.0.2
+user.language = ko
+java.specification.vendor = Oracle Corporation
+awt.toolkit = sun.awt.windows.WToolkit
+java.vm.info = mixed mode
+java.version = 11.0.2
+java.vendor = Oracle Corporation
+file.separator = \
+java.version.date = 2019-01-15
+java.vendor.url.bug = http://bugreport.java.com/bugreport/
+sun.io.unicode.encoding = UnicodeLittle
+sun.cpu.endian = little
+java.vendor.version = 18.9
+sun.desktop = windows
+sun.cpu.isalist = amd64
+
+
  3. Arrays 클래스와 Collections 클래스 
  
+ 실습하기 10-24 java.util.Arrays 클래스를 사용하기 
+
+java.util.Arrays 클래스 내의 메소드를 사용해보는 프로그램.
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_24
+
+package ch10.Collection;
+
+import java.util.Arrays;
+import java.util.List;
+
+
+public class Ex10_24 {
+
+
+	public static void main(String[] args) {
+		
+		String [] str = { "AAA" , "BBB" , "CCC" };
+		
+		//1. 특정값으로 채우기
+		Arrays.fill(str, "XXX");
+		
+		for (String xxx : str) {
+			System.out.println(xxx);
+		}
+		//2. 특정값 from ~ to
+		Arrays.fill(str, 0 , 2 , "YYY");
+		for (String xxx : str) {
+			System.out.println(">> " + xxx);
+		}
+
+		//3. 배열 비교
+		String [] aa = { "1" , "2" ,"3" };
+		String [] aa2 = { "1" , "2" ,"3" };
+		
+		System.out.println(Arrays.equals(aa, aa2));
+		
+		//4. 정렬
+		int [] num = { 1 , 3, 5 , 2, 4 };
+		Arrays.sort(num);  //기본 오름차순
+		
+		for (int i : num) {
+			System.out.println(i);
+		}
+		
+		String [] name = { "xMan", "Alex" ,  "XMan", "Bob" , "Curl" ,  "Flex" , "alex"};
+		Arrays.sort(name);
+		for (String string : name) {
+			System.out.println(string);
+		}
+		
+		//5. 인덱스 찾기
+		int index = Arrays.binarySearch(name, "Curl");
+		System.out.println(index);
+		
+		//6. List로 변화
+		String [] month = { "1월", "2월" ,  "3월", "4월" , "5월" };
+		List<String> list = Arrays.asList(month);
+		for (String s : list) {
+			System.out.println(s);
+		}
+	}//end main
+
+}//end class
+//
+XXX
+XXX
+XXX
+>> YYY
+>> YYY
+>> XXX
+true
+1
+2
+3
+4
+5
+Alex
+Bob
+Curl
+Flex
+XMan
+alex
+xMan
+2
+1월
+2월
+3월
+4월
+5월
+
+ 3.2 Comparator 인터페이스를 이용한 Array 정렬 
  
+ Comparator 인터페이스를 이용하면 사용자 클래스를 
+ 이용하여 저장된 배열을 특정 값으로 정렬. 
+
+ 실습하기 10-25 Comparator 인터페이스를 활용한 배열 정렬 
+
+Comparator  인터페이스를 활용하여 배열  내의 데이터를 정렬하는 프로그램.
+
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_25
  
+ package ch10.Collection;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+
+
+class Person{
+	
+	String name;
+	int age;
+	public Person(String name, int age) {
+		super();
+		this.name = name;
+		this.age = age;
+	}
+	
+	public String toString(){
+		return name + " " + age;
+	}
+	
+	public Person(int age){
+		this.age = age;
+	}
+}//end Person
+
+class PersonComp implements Comparator<Person>{
+
+	@Override
+	public int compare(Person o1, Person o2) {
+		
+		int result = 1;
+		if( o1.age >= o2.age) result = -1; //내림차순
+		return result;
+		
+	/*	int result = -1;
+		if( o1.age >= o2.age) result = 1; //오름차순
+		return result;*/
+	}
+	
+	
+	
+}
+public class Ex10_25 {
+
+	public static void main(String[] args) {
+		
+		Person p = new Person("홍길동", 20);
+		Person p2 = new Person("이순신", 44);
+		Person p3 = new Person("유관순", 18);
+		Person p4 = new Person("강감찬", 66);
+		Person [] ps = { p , p2, p3, p4 };
+		
+		// age로 내림차순 정렬
+		Arrays.sort(ps , new PersonComp());
+		for (Person person : ps) {
+			System.out.println(person);
+		}
+		
+	}//end main
+}//end class
+
+//
+강감찬 66
+이순신 44
+홍길동 20
+유관순 18
+
+ 3.3 Comparator 인터페이스를 이용한 Collection 정렬 
+ Comparator 인터페이스를 이용하면 사용자 클래스를 이용하여 저장된 
+ Collection을 특정 값으로 정렬할수 있다. 
  
+ 실습하기 10-26 Comparator 인터페이스를 활용한 Collection 정렬 
  
+ Comparator 인터페이스를 활용하여 Collection을 정렬한 프로그램. 
+ 동작 방식은 배열과 동일하며 Arrays.sort() 메소드 대신에 
+ Collections.sort()메소드를 사용. 
  
+프로젝트 유형 Java Project 로 하고 ,
+프로젝트 이름  Java_Collection 생성. 
+패키지 : ch10.Collection
+클래스 이름 :  Ex10_26
  
- 
- 
- 
- 
- 
- 
+ package ch10.Collection;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+
+
+class Student{
+	
+	String name;
+	int age;
+	public Student(String name, int age) {
+		super();
+		this.name = name;
+		this.age = age;
+	}
+	
+	public String toString(){
+		return name + " " + age;
+	}
+
+}//end Person
+
+class StudentComp implements Comparator<Student>{
+
+	@Override
+	public int compare(Student s1, Student s2) {
+		
+		int result = 1;
+		if( s1.age >= s2.age) result = -1; //내림차순
+		return result;
+		
+	/*	int result = -1;
+		if( s1.age >= s2.age) result = 1; //오름차순
+		return result;*/
+	}
+	
+	
+	
+}
+public class Ex10_26 {
+
+	public static void main(String[] args) {
+		
+		Student p = new Student("홍길동", 20);
+		Student p2 = new Student("이순신", 44);
+		Student p3 = new Student("유관순", 18);
+		Student p4 = new Student("강감찬", 66);
+		List<Student> list = new ArrayList<Student>();
+		list.add(p);
+		list.add(p2);
+		list.add(p3);
+		list.add(p4);
+		
+		// age로 내림차순 정렬
+		Collections.sort(list , new StudentComp());
+		for (Student person : list) {
+			System.out.println(person);
+		}
+		
+	}//end main
+}//end class
+
+//
+강감찬 66
+이순신 44
+홍길동 20
+유관순 18
+
+ 10장 컬렉션 
 
 
 

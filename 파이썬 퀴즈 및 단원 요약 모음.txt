@@ -58,11 +58,92 @@ filter(lambda x: x % 2, t))
 
 
 
+5
+
+* 정답 확인의 기회는 총 3번입니다.
+실습화면
+
+모범답안
+
+class MyInteger:
+   def __init__(self, i):
+     self.i = i
+   def __str__(self):
+     return str(self.i)
+   def increment(self, x):
+     self.i = self.i + x
+     return self
+   def sub(self, x):
+     self.i = self.i - x
+     return self
+
+#보기 수행
+k=MyInteger(10)
+print k
+k=k.increment(5)
+print k
+k=k.sub(10)
+print k
 
 
+코딩 내용을 입력하세요. 
+10
+15
+5
 
 
+22회차
 
+[보기]의 내용은 getOddSquare() 함수 호출과 함께 인자에 값을 주면 해당 값보다 작은 홀수들에 대해 제곱값을
+반복적으로 출력한 것입니다. 이와 같은 파이썬 코드가 올바로 수행될 수 있도록 getOddSquare() 발생자를
+작성하세요.
+
+>>>for k in getOddSquare(10):
+>>> print k,
+1 9 25 49 81
+>>>for k in getOddSquare(20):
+>>> print k,
+1 9 25 49 81 121 169 225 289 361
+
+* 정답 확인의 기회는 총 3번입니다.
+실습화면
+
+모범답안
+
+def getOddSquare(limit):
+     a = 1
+     while a <= limit:
+         yield a * a
+         a += 2
+
+
+23
+
+
+print "- end -"
+f.close()
+
+* 정답 확인의 기회는 총 3번입니다.
+실습화면
+
+모범답안
+
+filename = 't.txt'
+try:
+     f = open(filename, 'r')
+except IOError, msg:
+     print msg
+else:
+     a = float(f.readline())
+     try:
+          answer = 1.0 / a
+     except ZeroDivisionError, msg:
+          print msg
+     else:
+          print answer
+     finally:
+          print "- end -"
+          f.close()
 
 
 

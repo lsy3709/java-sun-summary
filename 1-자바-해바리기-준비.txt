@@ -28427,6 +28427,7 @@ DESC TB_MEMBER;
 ex)
 alter user scott identified by tiger account unlock;
 alter user sys identified by oracle account unlock;
+alter user hr2 identified by 1234 account unlock;
 
 입력시, 
 각 컬러명 명시 안하면, 무조건 전체 다 입력 하기. 
